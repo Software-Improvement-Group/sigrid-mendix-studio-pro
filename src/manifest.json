@@ -1,0 +1,11 @@
+{
+  "mendixComponent": {
+    "entryPoints": {
+      "main": "main.js",
+      "ui": {
+        "tab": "tab.js",
+        "dockablepane": "dockablepane.js"
+      }
+    }
+  }
+}
