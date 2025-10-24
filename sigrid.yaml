@@ -1,0 +1,9 @@
+languages:
+  - Javascript
+  - TypeScript
+
+dependencychecker:
+  blocklist: ["NONE"]
+
+thirdpartyfindings:
+  enabled: true
