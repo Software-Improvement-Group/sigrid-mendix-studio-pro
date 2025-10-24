@@ -1,12 +1,7 @@
-# Sigrid for Mendix Studio Pro
+# QSM integration for Mendix Studio Pro
 
-A Mendix Studio Pro extension that integrates Sigrid findings directly into your development environment.
-
-## Features
-
-- View findings from Sigrid in a dockable pane
-- Configure Sigrid API credentials (token, customer, system)
-- Real-time data fetching from Sigrid API
+A Mendix Studio Pro extension that integrates [Quality and Security Management](https://docs.mendix.com/appstore/partner-solutions/qsm/)
+directly into your development environment.
 
 ## Prerequisites
 
@@ -75,30 +70,6 @@ Find your credentials in your Sigrid project URL: `https://sigrid-says.com/<cust
 2. Click **Load/refresh findings**
 3. View findings in the table
 
-## Development
-
-### Project Structure
-
-```
-src/
-├── main/index.ts              # Extension entry point
-├── ui/
-│   ├── tab/index.tsx          # Settings UI
-│   └── dockablepane/index.tsx # Findings UI
-└── manifest.json              # Extension manifest
-```
-
-## API
-
-Uses Sigrid API endpoint:
-
-```
-GET https://sigrid-says.com/rest/analysis-results/api/v1/security-findings/{customer}/{system}
-Authorization: Bearer {token}
-```
-
-For more information on the Sigrid API: [Sigrid API Documentation](https://docs.sigrid-says.com/integrations/sigrid-api-documentation.html)
-
 ## Contact and Support
 
 Feel free to contact [SIG's support team](mailto:support@softwareimprovementgroup.com) for any questions or issues you may have after reading this document, or when using Sigrid or Sigrid CI. Users in Europe can also contact us by phone at +31 20 314 0953.
@@ -118,8 +89,3 @@ Copyright Software Improvement Group
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-
-## Resources
-
-- [Mendix Web Extensibility API Documentation](https://docs.mendix.com/apidocs-mxsdk/apidocs/web-extensibility-api-11/)
-- [Sigrid Documentation](https://docs.sigrid-says.com/)
