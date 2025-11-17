@@ -1,6 +1,9 @@
 import React, { StrictMode, useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { IComponent } from "@mendix/extensions-api";
+import { useSigridStore } from "../../store/sigridStore";
+import { ensureGlobalStyles } from "../dockablepane/styles";
+import { SettingsTab } from "./SettingsTab";
 
 export function SigridSettings() {
     const [sigridToken, setSigridToken] = useState("");
@@ -10,11 +13,40 @@ export function SigridSettings() {
     const [sigridSystem, setSigridSystem] = useState("");
     const [statusText, setStatusText] = useState("");
     
+    const setSettings = useSigridStore((state) => state.setSettings);
+    const loadAllData = useSigridStore((state) => state.loadAllData);
+
+    // TODO: maybe use css modules or other css method (vanilla extract) for less overhead 
     const saveSettings = async() => {
-        localStorage.setItem('sigridToken', sigridToken);
-        localStorage.setItem('sigridCustomer', sigridCustomer);
-        localStorage.setItem('sigridSystem', sigridSystem);
-        setStatusText("Settings saved!");
+        if (!sigridToken.trim() || !sigridCustomer.trim() || !sigridSystem.trim()) {
+            setStatusText("Error: All fields are required!");
+            return;
+        }
+
+        const normalizedSettings = {
+            token: sigridToken.trim(),
+            customer: sigridCustomer.trim().toLowerCase(),
+            system: sigridSystem.trim().toLowerCase()
+        };
+
+        // Save to Zustand store
+        setSettings(normalizedSettings);
+        
+    setStatusText("Settings saved! Loading data from QSM...");
+        
+        try {
+            // Load all data from the API
+            await loadAllData({ requireSettings: true, settingsOverride: normalizedSettings });
+
+            const latestError = useSigridStore.getState().error;
+            if (latestError) {
+                setStatusText("Settings saved but failed to load data: " + latestError);
+            } else {
+                setStatusText("Settings saved and data loaded successfully!");
+            }
+        } catch (error: any) {
+            setStatusText("Settings saved but failed to load data: " + (error?.message || "Unknown error"));
+        }
     }
 
     const loadSettings = async() => {
@@ -54,23 +86,27 @@ export function SigridSettings() {
         setSigridSystem(e.target.value);
     }
 
-    useEffect(() =>{ // This is executed once, on load
+    useEffect(() => {
+        ensureGlobalStyles();
+    }, []);
+
+    useEffect(() =>{
         loadSettings();
     }, [])
 
     return (
-        <div>
-            Token: <input type="password" id="sigridTokenInput" value={sigridToken} onChange={handleTokenChange}/><br />
-            Customer name (as defined in QSM): <input type="text" id="sigridCustomerInput" value={sigridCustomer} onChange={handleCustomerChange}/><br />
-            System name (as defined in QSM): <input type="text" id="sigridSystemInput" value={sigridSystem} onChange={handleSystemChange}/><br />
-            
-            <input type="button" onClick={saveSettings} value="Save settings" />
-            <input type="button" onClick={loadSettings} value="Retrieve/reset stored settings" />
-            <br />
-            <br />
-            <span>{statusText}</span>
-        </div>
-     );
+        <SettingsTab
+            customer={sigridCustomer}
+            onCustomerChange={handleCustomerChange}
+            onLoad={loadSettings}
+            onSave={saveSettings}
+            onSystemChange={handleSystemChange}
+            onTokenChange={handleTokenChange}
+            statusText={statusText}
+            system={sigridSystem}
+            token={sigridToken}
+    />
+    );
 }
 
 export const component: IComponent = {

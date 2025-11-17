@@ -2,7 +2,7 @@
   "name": "sigrid-mendix-extension",
   "version": "0.1.0",
   "type": "module",
-  "description": "Mendix Studio Pro extension that integrates Sigrid findings directly into your development environment",
+  "description": "Mendix Studio Pro extension that integrates QSM findings directly into your development environment",
   "license": "Apache-2.0",
   "author": "Software Improvement Group",
   "repository": {
@@ -11,7 +11,6 @@
   },
   "keywords": [
     "mendix",
-    "sigrid",
     "qsm",
     "security",
     "code-quality",
@@ -25,14 +24,14 @@
     "@mendix/extensions-api": "^0.2.4-mendix.11.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "axios": "1.9.0"
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "typescript": "^5.8.2",
     "esbuild": "0.25.5",
-    "minimist": "^1.2.8"
+    "minimist": "^1.2.8",
+    "typescript": "^5.8.2"
   }
 }
