@@ -1,6 +1,5 @@
 import React from "react";
 import { getPrimaryTabLabel, type PrimaryTabType } from "../tabConfig";
-import { primaryTabsContainerStyle, primaryTabStyle } from "../styles";
 
 type PrimaryTabsProps = {
     activeTab: PrimaryTabType;
@@ -9,15 +8,16 @@ type PrimaryTabsProps = {
 };
 
 export const PrimaryTabs: React.FC<PrimaryTabsProps> = ({ activeTab, onSelect, tabs }) => (
-    <div style={primaryTabsContainerStyle}>
+    <div className="primary-tabs">
         {tabs.map((tab) => (
-            <div
+            <button
                 key={tab}
-                style={primaryTabStyle(tab, activeTab)}
+                type="button"
+                className={`primary-tab${tab === activeTab ? " active" : ""}`}
                 onClick={() => onSelect(tab)}
             >
                 {getPrimaryTabLabel(tab)}
-            </div>
+            </button>
         ))}
     </div>
 );

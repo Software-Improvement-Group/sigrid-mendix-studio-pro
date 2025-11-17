@@ -74,7 +74,8 @@ export const commonConfig = {
         ".gif": "file",
         ".ttf": "file",
         ".woff": "file",
-        ".woff2": "file"
+        ".woff2": "file",
+        ".css": "text"
     },
     sourcemap: true
 };
