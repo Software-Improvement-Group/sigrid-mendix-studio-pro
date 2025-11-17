@@ -1,6 +1,5 @@
 import React from "react";
 import type { OshDependency } from "../../../store/sigridStore";
-import { tableStyle } from "../styles";
 
 type OpenSourceHealthTableProps = {
     dependencies: OshDependency[];
@@ -17,7 +16,7 @@ const formatLicense = (licenses: OshDependency["licenses"]): string => {
 };
 
 export const OpenSourceHealthTable: React.FC<OpenSourceHealthTableProps> = ({ dependencies }) => (
-    <table id="openSourceHealth" style={tableStyle}>
+    <table id="openSourceHealth" className="sigrid-table">
         <thead>
             <tr>
                 <th>Type</th>

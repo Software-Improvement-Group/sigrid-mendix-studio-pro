@@ -1,13 +1,12 @@
 import React from "react";
 import type { SecurityFinding } from "../../../store/sigridStore";
-import { tableStyle } from "../styles";
 
 type SecurityTableProps = {
     findings: SecurityFinding[];
 };
 
 export const SecurityTable: React.FC<SecurityTableProps> = ({ findings }) => (
-    <table id="sigridFindings" style={tableStyle}>
+    <table id="sigridFindings" className="sigrid-table">
         <thead>
             <tr>
                 <th>Type</th>
