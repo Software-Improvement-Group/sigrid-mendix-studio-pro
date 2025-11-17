@@ -1,10 +1,5 @@
 import React from "react";
 import { getMaintainabilityTabLabel, type MaintainabilitySubTabType } from "../tabConfig";
-import {
-    maintainabilityArrowStyle,
-    maintainabilityTabStyle,
-    maintainabilityTabsContainerStyle
-} from "../styles";
 
 type MaintainabilityTabsProps = {
     activeTab: MaintainabilitySubTabType;
@@ -13,17 +8,18 @@ type MaintainabilityTabsProps = {
 };
 
 export const MaintainabilityTabs: React.FC<MaintainabilityTabsProps> = ({ activeTab, onSelect, tabs }) => (
-    <div style={maintainabilityTabsContainerStyle}>
-        <div style={maintainabilityArrowStyle}>‹</div>
+    <div className="maintainability-tabs">
+        <div className="maintainability-arrow">‹</div>
         {tabs.map((tab) => (
-            <div
+            <button
                 key={tab}
-                style={maintainabilityTabStyle(tab, activeTab)}
+                type="button"
+                className={`maintainability-tab${tab === activeTab ? " active" : ""}`}
                 onClick={() => onSelect(tab)}
             >
                 {getMaintainabilityTabLabel(tab)}
-            </div>
+            </button>
         ))}
-        <div style={maintainabilityArrowStyle}>›</div>
+        <div className="maintainability-arrow">›</div>
     </div>
 );

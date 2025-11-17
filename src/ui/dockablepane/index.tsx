@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { IComponent } from "@mendix/extensions-api";
 import { useSigridStore } from "../../store/sigridStore";
 import type { RefactoringCandidate } from "../../store/sigridStore";
+import { ensureGlobalStyles } from "./styles";
 import { PrimaryTabs } from "./components/PrimaryTabs";
 import { MaintainabilityTabs } from "./components/MaintainabilityTabs";
 import { SecurityTable } from "./components/SecurityTable";
@@ -20,7 +21,6 @@ import {
     type PrimaryTabType,
     type MaintainabilitySubTabType
 } from "./tabConfig";
-import { ensureGlobalStyles } from "./styles";
 
 type RefactoringTabComponent = React.FC<{ candidates: RefactoringCandidate[] }>;
 
@@ -107,8 +107,8 @@ export function SigridFindings() {
             )}
             
             <div>Analysis date: <span>{analysisDate}</span></div>
-            {isLoading && <div style={{padding: '20px', color: '#666'}}>Loading data...</div>}
-            {error && <div style={{padding: '20px', color: '#d32f2f'}}>{error}</div>}
+            {isLoading && <div className="status-message">Loading data...</div>}
+            {error && <div className="status-message error">{error}</div>}
             
             {!isLoading && !error && (
                 <>
@@ -126,7 +126,11 @@ export function SigridFindings() {
                 </>
             )}
             
-            <button onClick={() => loadAllData({ requireSettings: true })} disabled={isLoading}>
+            <button
+                className="reload-button"
+                onClick={() => loadAllData({ requireSettings: true })}
+                disabled={isLoading}
+            >
                 {isLoading ? 'Loading...' : 'Reload Data'}
             </button>
         </div>

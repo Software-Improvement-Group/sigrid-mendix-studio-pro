@@ -1,14 +1,4 @@
 import React from "react";
-import {
-    settingsButtonRowStyle,
-    settingsContainerStyle,
-    settingsFieldStyle,
-    settingsInputStyle,
-    settingsLabelStyle,
-    settingsPrimaryButtonStyle,
-    settingsSecondaryButtonStyle,
-    settingsStatusStyle
-} from "../dockablepane/styles";
 
 export type SettingsTabProps = {
     token: string;
@@ -34,60 +24,64 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     onLoad
 }) => {
     const statusTone = statusText.trim().toLowerCase();
-    const statusColor = statusTone.includes("error")
-        ? "#b3261e"
-        : statusTone.includes("success") || statusTone.includes("saved")
-            ? "#156ff4"
-            : "#272727";
+    let statusVariant = "neutral";
+
+    if (statusTone.includes("error")) {
+        statusVariant = "error";
+    } else if (statusTone.includes("success") || statusTone.includes("saved")) {
+        statusVariant = "success";
+    }
+
+    const statusClassName = `settings-status ${statusVariant}`;
 
     return (
-        <div style={settingsContainerStyle}>
-            <div style={settingsFieldStyle}>
-                <label htmlFor="sigridCustomerInput" style={settingsLabelStyle}>Customer name</label>
+        <div className="settings-container">
+            <div className="settings-field">
+                <label htmlFor="sigridCustomerInput" className="settings-label">Customer name</label>
                 <input
                     id="sigridCustomerInput"
                     type="text"
                     value={customer}
                     onChange={onCustomerChange}
-                    style={settingsInputStyle}
+                    className="settings-input"
                     placeholder="Company or organization in QSM"
                 />
             </div>
 
-            <div style={settingsFieldStyle}>
-                <label htmlFor="sigridSystemInput" style={settingsLabelStyle}>System name</label>
+            <div className="settings-field">
+                <label htmlFor="sigridSystemInput" className="settings-label">System name</label>
                 <input
                     id="sigridSystemInput"
                     type="text"
                     value={system}
                     onChange={onSystemChange}
-                    style={settingsInputStyle}
+                    className="settings-input"
                     placeholder="System identifier in QSM"
                 />
             </div>
 
-            <div style={settingsFieldStyle}>
-                <label htmlFor="sigridTokenInput" style={settingsLabelStyle}>QSM API token</label>
+            <div className="settings-field">
+                <label htmlFor="sigridTokenInput" className="settings-label">QSM API token</label>
                 <input
                     id="sigridTokenInput"
                     type="password"
                     value={token}
                     onChange={onTokenChange}
-                    style={settingsInputStyle}
+                    className="settings-input"
                     placeholder="Enter your QSM token"
                 />
             </div>
 
-            <div style={settingsButtonRowStyle}>
-                <button type="button" onClick={onSave} style={settingsPrimaryButtonStyle}>
+            <div className="settings-button-row">
+                <button type="button" onClick={onSave} className="settings-button primary">
                     Save settings
                 </button>
-                <button type="button" onClick={onLoad} style={settingsSecondaryButtonStyle}>
+                <button type="button" onClick={onLoad} className="settings-button secondary">
                     Retrieve stored settings
                 </button>
             </div>
 
-            <div style={{ ...settingsStatusStyle, color: statusColor }}>
+            <div className={statusClassName}>
                 {statusText}
             </div>
         </div>
