@@ -106,9 +106,17 @@ export function SigridFindings() {
                 />
             )}
             
-            <div>Analysis date: <span>{analysisDate}</span></div>
+            <div className="analysis-date">Analysis date: <span>{analysisDate}</span></div>
             {isLoading && <div className="status-message">Loading data...</div>}
             {error && <div className="status-message error">{error}</div>}
+
+            <button
+                className="reload-button"
+                onClick={() => loadAllData({ requireSettings: true })}
+                disabled={isLoading}
+            >
+                {isLoading ? 'Loading...' : 'Reload data'}
+            </button>
             
             {!isLoading && !error && (
                 <>
@@ -125,14 +133,6 @@ export function SigridFindings() {
                     )}
                 </>
             )}
-            
-            <button
-                className="reload-button"
-                onClick={() => loadAllData({ requireSettings: true })}
-                disabled={isLoading}
-            >
-                {isLoading ? 'Loading...' : 'Reload Data'}
-            </button>
         </div>
     );
 }

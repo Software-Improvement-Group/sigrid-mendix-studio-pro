@@ -72,18 +72,27 @@ body,
     border: 1px solid #000000;
     border-collapse: collapse;
     width: 100%;
+    font-size: 12px;
 }
 
 .sigrid-table th,
 .sigrid-table td {
     border: 1px solid #d0d0d0;
-    padding: 8px;
+    padding: 4px 8px 4px 8px;
     text-align: left;
 }
 
 .sigrid-table th {
     background-color: #f4f6fb;
     font-weight: 600;
+}
+
+.sigrid-table tr {
+    background-color: #ffffff;
+}
+
+.sigrid-table tr:nth-child(even) {
+    background-color: #E9EAEA;
 }
 
 .settings-container {
@@ -166,7 +175,7 @@ body,
 }
 
 .reload-button {
-    margin-top: 16px;
+    margin-bottom: 24px;
     padding: 8px 16px;
     border-radius: 6px;
     border: 1px solid #c1c7d0;
@@ -187,4 +196,12 @@ body,
 
 .status-message.error {
     color: #d32f2f;
+}
+
+.analysis-date,
+.analysis-date span {
+    margin-top: 24px;
+    margin-bottom: 12px;
+    color: #808087;
+    font-size: 12px;
 }
