@@ -6,8 +6,8 @@ const outDir = `dist/QSM`
 // Set this to your Mendix app directory path
 // Example (macOS): "/Users/username/Mendix/MyApp"
 // Example (Windows): "C:\\Users\\username\\Mendix\\MyApp"
-const appDir = process.env.HOME + "/Mendix/NativeFileDocumentsDemo-main/";
-const extensionDirectoryName = "extensions";
+const appDir = ""
+const extensionDirectoryName = "extensions"
 
 const entryPoints = [
     {
