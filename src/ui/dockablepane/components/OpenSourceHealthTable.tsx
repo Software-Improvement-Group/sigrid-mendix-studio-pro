@@ -1,58 +1,56 @@
 import React from "react";
-import type { OshDependency } from "../../../store/sigridStore";
+import type {OshDependency} from "../../../store/sigridStore";
+import {getRiskSymbol, SEVERITY_SYMBOLS} from "./SecurityTable";
 
 type OpenSourceHealthTableProps = {
     dependencies: OshDependency[];
 };
 
-const formatLicense = (licenses: OshDependency["licenses"]): string => {
-    if (licenses.length === 0) {
+const sortDependencies = (dependencies: OshDependency[]) => {
+    const severityNames: string[] = Object.keys(SEVERITY_SYMBOLS);
+
+    const sorted: OshDependency[] = dependencies.slice();
+    sorted.sort((a, b) => severityNames.indexOf(a.risk || "") - severityNames.indexOf(b.risk || ""));
+    return sorted;
+};
+
+const formatTransitive = (value: string | undefined) => {
+    if (value === "DIRECT") {
+        return "Direct";
+    } else if (value === "TRANSITIVE") {
+        return "Transitive";
+    } else {
         return "Unknown";
     }
-    return licenses
-        .map((license) => license.name ?? license.id ?? "Unknown")
-        .filter((value, index, array) => array.indexOf(value) === index)
-        .join(", ");
 };
+
 
 export const OpenSourceHealthTable: React.FC<OpenSourceHealthTableProps> = ({ dependencies }) => (
     <table id="openSourceHealth" className="sigrid-table">
         <thead>
             <tr>
-                <th>Type</th>
-                <th>Name</th>
-                <th>Dependency Type</th>
+                <th>Risk</th>
+                <th>Library</th>
                 <th>Version</th>
-                <th>Library Freshness</th>
-                <th>Status</th>
+                <th>Direct/Transitive</th>
                 <th>License</th>
-                <th>Overall Risk</th>
-                <th>Vulnerability Risk</th>
-                <th>License Risk</th>
-                <th>Freshness Risk</th>
-                <th>Activity Risk</th>
-                <th>Stability Risk</th>
-                <th>Management Risk</th>
+                <th>Vulnerabilities</th>
+                <th>Freshness</th>
+                <th>Activity</th>
             </tr>
         </thead>
         <tbody>
             {dependencies.length > 0 ? (
-                dependencies.map((dependency, index) => (
+                sortDependencies(dependencies).map((dependency, index) => (
                     <tr key={`${dependency.name}-${index}`}>
-                        <td>{dependency.type ?? "N/A"}</td>
+                        <td>{getRiskSymbol(dependency.risk)}</td>
                         <td>{dependency.name}</td>
-                        <td>{dependency.dependencyType ?? "Unknown"}</td>
                         <td>{dependency.version}</td>
-                        <td>{dependency.libraryFreshness ?? dependency.freshnessRisk}</td>
-                        <td>{dependency.status ?? "Unknown"}</td>
-                        <td>{formatLicense(dependency.licenses)}</td>
-                        <td>{dependency.risk ?? "N/A"}</td>
-                        <td>{dependency.vulnerabilityRisk}</td>
-                        <td>{dependency.licenseRisk}</td>
-                        <td>{dependency.freshnessRisk}</td>
-                        <td>{dependency.activityRisk}</td>
-                        <td>{dependency.stabilityRisk}</td>
-                        <td>{dependency.managementRisk}</td>
+                        <td>{formatTransitive(dependency.dependencyType)}</td>
+                        <td>{getRiskSymbol(dependency.vulnerabilityRisk)}</td>
+                        <td>{getRiskSymbol(dependency.licenseRisk)}</td>
+                        <td>{getRiskSymbol(dependency.freshnessRisk)}</td>
+                        <td>{getRiskSymbol(dependency.activityRisk)}</td>
                     </tr>
                 ))
             ) : (

@@ -13,7 +13,7 @@ export const PRIMARY_TABS: PrimaryTabType[] = ['maintainability', 'security', 'o
 const PRIMARY_TAB_LABELS: Record<PrimaryTabType, string> = {
     maintainability: 'Maintainability',
     security: 'Security',
-    openSourceHealth: 'OSH'
+    openSourceHealth: 'Open Source Health'
 };
 
 export const getPrimaryTabLabel = (tab: PrimaryTabType): string => PRIMARY_TAB_LABELS[tab];
