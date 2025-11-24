@@ -38,8 +38,8 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings }) => (
         <thead>
             <tr>
                 <th>Risk</th>
-                <th>Description</th>
                 <th>Location</th>
+                <th>Description</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -48,8 +48,8 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings }) => (
                 sortFindings(findings).map((finding) => (
                     <tr key={finding.id}>
                         <td>{getRiskSymbol(finding.severity)}</td>
-                        <td>{finding.name}</td>
                         <td>{finding.displayFilePath ?? finding.filePath ?? ""}</td>
+                        <td>{finding.name}</td>
                         <td>{formatStatus(finding.status)}</td>
                     </tr>
                 ))

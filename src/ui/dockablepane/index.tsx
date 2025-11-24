@@ -1,38 +1,13 @@
-import React, { StrictMode, useState, useEffect } from "react";
-import { createRoot } from "react-dom/client";
-import { IComponent } from "@mendix/extensions-api";
-import { useSigridStore } from "../../store/sigridStore";
-import type { RefactoringCandidate } from "../../store/sigridStore";
-import { ensureGlobalStyles } from "./styles";
-import { PrimaryTabs } from "./components/PrimaryTabs";
-import { MaintainabilityTabs } from "./components/MaintainabilityTabs";
-import { SecurityTable } from "./components/SecurityTable";
-import { OpenSourceHealthTable } from "./components/OpenSourceHealthTable";
-import { DuplicationRefactoringTab } from "./components/refactoringTabs/DuplicationRefactoringTab";
-import { UnitSizeRefactoringTab } from "./components/refactoringTabs/UnitSizeRefactoringTab";
-import { UnitComplexityRefactoringTab } from "./components/refactoringTabs/UnitComplexityRefactoringTab";
-import { UnitInterfacingRefactoringTab } from "./components/refactoringTabs/UnitInterfacingRefactoringTab";
-import { ModuleCouplingRefactoringTab } from "./components/refactoringTabs/ModuleCouplingRefactoringTab";
-import { ComponentIndependenceRefactoringTab } from "./components/refactoringTabs/ComponentIndependenceRefactoringTab";
-import { ComponentEntanglementRefactoringTab } from "./components/refactoringTabs/ComponentEntanglementRefactoringTab";
-import {
-    PRIMARY_TABS,
-    MAINTAINABILITY_TABS,
-    type PrimaryTabType,
-    type MaintainabilitySubTabType
-} from "./tabConfig";
-
-type RefactoringTabComponent = React.FC<{ candidates: RefactoringCandidate[] }>;
-
-const refactoringTabComponents: Record<MaintainabilitySubTabType, RefactoringTabComponent> = {
-    duplication: DuplicationRefactoringTab,
-    unitSize: UnitSizeRefactoringTab,
-    unitComplexity: UnitComplexityRefactoringTab,
-    unitInterfacing: UnitInterfacingRefactoringTab,
-    moduleCoupling: ModuleCouplingRefactoringTab,
-    componentIndependence: ComponentIndependenceRefactoringTab,
-    componentEntanglement: ComponentEntanglementRefactoringTab
-};
+import React, {StrictMode, useEffect, useState} from "react";
+import {createRoot} from "react-dom/client";
+import {IComponent} from "@mendix/extensions-api";
+import {useSigridStore} from "../../store/sigridStore";
+import {ensureGlobalStyles} from "./styles";
+import {PrimaryTabs} from "./components/PrimaryTabs";
+import {SecurityTable} from "./components/SecurityTable";
+import {OpenSourceHealthTable} from "./components/OpenSourceHealthTable";
+import {PRIMARY_TABS, type PrimaryTabType} from "./tabConfig";
+import {MaintainabilityTable} from "./components/MaintainabilityTable";
 
 const STORAGE_KEYS = new Set([
     'sigridToken',
@@ -46,7 +21,6 @@ const STORAGE_KEYS = new Set([
 
 export function SigridFindings() {
     const [activePrimaryTab, setActivePrimaryTab] = useState<PrimaryTabType>('security');
-    const [activeMaintainabilityTab, setActiveMaintainabilityTab] = useState<MaintainabilitySubTabType>('duplication');
 
     useEffect(() => {
         ensureGlobalStyles();
@@ -87,9 +61,6 @@ export function SigridFindings() {
         void loadAllData();
     }, [settings?.token, settings?.customer, settings?.system, loadAllData]);
 
-    const currentRefactoringCandidates = refactoringCandidates[activeMaintainabilityTab] || [];
-    const CurrentRefactoringTab = refactoringTabComponents[activeMaintainabilityTab];
-
     return (
         <div>
             <PrimaryTabs
@@ -97,15 +68,7 @@ export function SigridFindings() {
                 onSelect={setActivePrimaryTab}
                 tabs={PRIMARY_TABS}
             />
-            
-            {activePrimaryTab === 'maintainability' && (
-                <MaintainabilityTabs
-                    activeTab={activeMaintainabilityTab}
-                    onSelect={setActiveMaintainabilityTab}
-                    tabs={MAINTAINABILITY_TABS}
-                />
-            )}
-            
+
             <div className="analysis-date">Analysis date: <span>{analysisDate}</span></div>
             {isLoading && <div className="status-message">Loading data...</div>}
             {error && <div className="status-message error">{error}</div>}
@@ -129,7 +92,7 @@ export function SigridFindings() {
                     )}
                     
                     {activePrimaryTab === 'maintainability' && (
-                        <CurrentRefactoringTab candidates={currentRefactoringCandidates} />
+                        <MaintainabilityTable refactoringCandidates={refactoringCandidates} />
                     )}
                 </>
             )}

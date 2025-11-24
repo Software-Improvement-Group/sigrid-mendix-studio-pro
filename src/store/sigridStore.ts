@@ -148,7 +148,7 @@ export type SigridSettings = {
     system: string;
 };
 
-type RefactoringCandidatesMap = Record<RefactoringCategory, RefactoringCandidate[]>;
+export type RefactoringCandidatesMap = Record<RefactoringCategory, RefactoringCandidate[]>;
 
 const REFACTORING_CATEGORIES: RefactoringCategory[] = [
     "duplication",
