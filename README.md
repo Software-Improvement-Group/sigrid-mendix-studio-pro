@@ -7,7 +7,6 @@ directly into your development environment.
 
 - Mendix Studio Pro 11.2.0 or higher
 - Node.js 22.x or higher
-- You have a Sigrid account
 - You have a [Sigrid API token](https://docs.sigrid-says.com/organization-integration/authentication-tokens.html)
 
 ## Installation
