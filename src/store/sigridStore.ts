@@ -230,6 +230,17 @@ const toDisplayFilePath = (path?: string): string | undefined => {
     return fileName ? `.../${fileName}` : undefined;
 };
 
+const stripMxJsonSuffix = (path?: string): string | undefined => {
+    if (!path) {
+        return undefined;
+    }
+    const trimmed = path.trim();
+    if (!trimmed) {
+        return undefined;
+    }
+    return trimmed.replace(/\.mx\.json$/i, "");
+};
+
 const mapArray = <T>(input: unknown, mapper: (value: unknown) => T | null): T[] => {
     if (!Array.isArray(input)) {
         return [];
@@ -356,7 +367,7 @@ const mapRefactoringLocation = (input: unknown): RefactoringCandidateLocation | 
 
     const data = input as Record<string, unknown>;
     const component = asString(data.component) ?? "";
-    const file = asString(data.file) ?? "";
+    const file = stripMxJsonSuffix(asString(data.file)) ?? "";
 
     if (!component && !file) {
         return null;
@@ -408,7 +419,8 @@ const mapSecurityFinding = (input: unknown): SecurityFinding | null => {
 
     const references = mapArray<SecurityFindingReference>(data.references, mapSecurityReference);
 
-    const filePath = asString(data.filePath) ?? asString(data.path);
+    const rawFilePath = asString(data.filePath) ?? asString(data.path);
+    const filePath = stripMxJsonSuffix(rawFilePath);
     const displayFilePath = toDisplayFilePath(filePath);
 
     return {
@@ -577,7 +589,7 @@ const mapRefactoringCandidate = (input: unknown, category: RefactoringCategory):
         sameComponent,
         sameFile,
         component: asString(data.component),
-        file: asString(data.file),
+        file: stripMxJsonSuffix(asString(data.file)),
         name: asString(data.name),
         moduleId: asNumber(data.moduleId),
         startLine: asNumber(data.startLine),
