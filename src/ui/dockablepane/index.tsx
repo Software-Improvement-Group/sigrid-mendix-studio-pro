@@ -79,6 +79,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     }, [studioPro]);
 
     
+    // TODO: index is too long, put all the logic into store and call actions here
     // TODO: here it's better to do something like const {securityFindings, oshDependencies, refactoringCandidates, analysisDate, isLoading, error, settings, loadSettingsFromStorage, loadAllData} = useSigridStore();
     // Get data and actions from Zustand store
     const securityFindings = useSigridStore((state) => state.securityFindings);
@@ -162,16 +163,16 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     const openSourceHealthCount = oshDependencies.length;
 
     // Keeping this here for debugging purposes, will remove after i make sure the mendix file and sigrid file paths match correctly
-    const scopeDescription = useMemo(() => {
-        if (scope === "system" || !scopeEnabled) {
-            return "Scope: Entire system";
-        }
-        if (!activeFile?.documentName) {
-            return "Scope: open a file to filter";
-        }
-        const modulePrefix = activeFile.moduleName ? `${activeFile.moduleName} / ` : "";
-        return `Scope: ${modulePrefix}${activeFile.documentName}`;
-    }, [activeFile, scope, scopeEnabled]);
+    // const scopeDescription = useMemo(() => {
+    //     if (scope === "system" || !scopeEnabled) {
+    //         return "Scope: Entire system";
+    //     }
+    //     if (!activeFile?.documentName) {
+    //         return "Scope: open a file to filter";
+    //     }
+    //     const modulePrefix = activeFile.moduleName ? `${activeFile.moduleName} / ` : "";
+    //     return `Scope: ${modulePrefix}${activeFile.documentName}`;
+    // }, [activeFile, scope, scopeEnabled]);
 
     useEffect(() => {
         const syncFromStorage = () => loadSettingsFromStorage();
@@ -213,7 +214,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
             </div>
             {scopeEnabled && (
                 <div className="scope-toggle" aria-label="Findings scope selector">
-                    <span>{scopeDescription}</span>
+                    {/* <span>{scopeDescription}</span> */}
                     <div className="scope-toggle-buttons">
                         <button
                             type="button"
