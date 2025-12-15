@@ -68,7 +68,7 @@ npm run build:dev    # Build with watch mode
 1. Locate the "Extensions" menu in Studio Pro's main menu bar.
 2. Select the "QSM extension".
 3. Select "Show QSM findings".
-4. Click **Load/refresh findings**
+4. Click **Refresh findings**
 5. View findings in the table
 
 ## License

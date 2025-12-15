@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { IAppFilesApi } from "@mendix/extensions-api";
 
 const SIGRID_API_BASE = "https://sigrid-says.com/rest/analysis-results/api/v1";
 
@@ -7,6 +8,8 @@ const OSH_DEPENDENCIES_KEY = "sigridOshDependencies";
 const OSH_METADATA_KEY = "sigridOshMetadata";
 const REFACTORING_CANDIDATES_KEY = "sigridRefactoringCandidates";
 const ANALYSIS_DATE_KEY = "sigridAnalysisDate";
+const APP_FILE_STATE_PATH = "qsm-sigrid-cache.json";
+const APP_FILE_STATE_VERSION = 1 as const;
 
 export type SecurityFindingReference = {
     title?: string;
@@ -685,6 +688,73 @@ const formatAnalysisDate = (value: string): string => {
     return value;
 };
 
+type SigridStorageFileV1 = {
+    version: typeof APP_FILE_STATE_VERSION;
+    settings: SigridSettings | null;
+    securityFindings: unknown;
+    oshDependencies: unknown;
+    oshMetadata: unknown;
+    refactoringCandidates: unknown;
+    analysisDate: string;
+};
+
+const buildStorageFileV1 = (state: SigridState): SigridStorageFileV1 => ({
+    version: APP_FILE_STATE_VERSION,
+    settings: state.settings,
+    securityFindings: state.securityFindings,
+    oshDependencies: state.oshDependencies,
+    oshMetadata: state.oshMetadata,
+    refactoringCandidates: state.refactoringCandidates,
+    analysisDate: state.analysisDate,
+});
+
+const deserializeSettings = (raw: unknown): SigridSettings | null => {
+    if (!raw || typeof raw !== "object") {
+        return null;
+    }
+    const data = raw as Record<string, unknown>;
+    const token = asString(data.token);
+    const customer = asString(data.customer);
+    const system = asString(data.system);
+    if (!token || !customer || !system) {
+        return null;
+    }
+    return {
+        token,
+        customer: customer.toLowerCase(),
+        system: system.toLowerCase(),
+    };
+};
+
+const parseStorageFileV1 = (raw: unknown): SigridStorageFileV1 | null => {
+    if (!raw || typeof raw !== "object") {
+        return null;
+    }
+    const data = raw as Record<string, unknown>;
+    const version = asNumber(data.version);
+    if (version !== APP_FILE_STATE_VERSION) {
+        return null;
+    }
+
+    const settings = deserializeSettings(data.settings);
+    const securityFindings = deserializeSecurityFindings(data.securityFindings);
+    const oshDependencies = deserializeOshDependencies(data.oshDependencies);
+    const oshMetadata = deserializeOshMetadata(data.oshMetadata);
+    const refactoringCandidates = deserializeRefactoringCandidates(data.refactoringCandidates);
+    const derivedAnalysisDate = deriveAnalysisDate(securityFindings, refactoringCandidates, oshMetadata);
+    const analysisDate = asString(data.analysisDate) ?? derivedAnalysisDate;
+
+    return {
+        version: APP_FILE_STATE_VERSION,
+        settings,
+        securityFindings,
+        oshDependencies,
+        oshMetadata,
+        refactoringCandidates,
+        analysisDate,
+    };
+};
+
 type SigridState = {
     settings: SigridSettings | null;
     securityFindings: SecurityFinding[];
@@ -699,6 +769,125 @@ type SigridState = {
     loadSettingsFromStorage: () => void;
 };
 
+let storageAppFilesApi: IAppFilesApi | null = null;
+let storageInit: Promise<void> | null = null;
+let storageWriteTimer: ReturnType<typeof setTimeout> | null = null;
+let storageLastWritten: string | null = null;
+
+const scheduleStorageWrite = () => {
+    if (!storageAppFilesApi) {
+        return;
+    }
+    if (storageWriteTimer) {
+        clearTimeout(storageWriteTimer);
+    }
+
+    storageWriteTimer = setTimeout(() => {
+        void flushSigridStorage();
+    }, 500);
+};
+
+const loadStorageFileFromAppDir = async (appFilesApi: IAppFilesApi): Promise<SigridStorageFileV1 | null> => {
+    try {
+        const raw = await appFilesApi.getFile(APP_FILE_STATE_PATH);
+        const parsed = parseStorageFileV1(JSON.parse(raw));
+        return parsed;
+    } catch {
+        return null;
+    }
+};
+
+const applyStorageFileToStore = (storageFile: SigridStorageFileV1) => {
+    useSigridStore.setState({
+        settings: storageFile.settings,
+        securityFindings: deserializeSecurityFindings(storageFile.securityFindings),
+        oshDependencies: deserializeOshDependencies(storageFile.oshDependencies),
+        oshMetadata: deserializeOshMetadata(storageFile.oshMetadata),
+        refactoringCandidates: deserializeRefactoringCandidates(storageFile.refactoringCandidates),
+        analysisDate: storageFile.analysisDate,
+        error: null,
+        isLoading: false,
+    });
+};
+
+export const initSigridStorage = async (appFilesApi: IAppFilesApi): Promise<void> => {
+    storageAppFilesApi = appFilesApi;
+
+    if (storageInit) {
+        return storageInit;
+    }
+
+    storageInit = (async () => {
+        const storageFile = await loadStorageFileFromAppDir(appFilesApi);
+        if (storageFile) {
+            applyStorageFileToStore(storageFile);
+        } else {
+            try {
+                useSigridStore.getState().loadSettingsFromStorage();
+                await flushSigridStorage();
+            } catch {
+            }
+        }
+
+        useSigridStore.subscribe((state, prevState) => {
+            const relevantChanged =
+                state.settings !== prevState.settings ||
+                state.analysisDate !== prevState.analysisDate ||
+                state.securityFindings !== prevState.securityFindings ||
+                state.oshDependencies !== prevState.oshDependencies ||
+                state.oshMetadata !== prevState.oshMetadata ||
+                state.refactoringCandidates !== prevState.refactoringCandidates;
+            if (!relevantChanged) {
+                return;
+            }
+
+            scheduleStorageWrite();
+        });
+    })();
+
+    return storageInit;
+};
+
+export const flushSigridStorage = async (): Promise<void> => {
+    if (!storageAppFilesApi) {
+        return;
+    }
+
+    const state = useSigridStore.getState();
+    const payload = buildStorageFileV1(state);
+    let json: string;
+
+    try {
+        json = JSON.stringify(payload);
+    } catch {
+        return;
+    }
+
+    if (json === storageLastWritten) {
+        return;
+    }
+
+    try {
+        await storageAppFilesApi.putFile(APP_FILE_STATE_PATH, JSON.stringify(payload, null, 2));
+        storageLastWritten = json;
+    } catch {
+    }
+};
+
+export const refreshSigridStorageFromAppFile = async (): Promise<boolean> => {
+    if (!storageAppFilesApi) {
+        return false;
+    }
+
+    const storageFile = await loadStorageFileFromAppDir(storageAppFilesApi);
+    if (!storageFile) {
+        return false;
+    }
+
+    applyStorageFileToStore(storageFile);
+    return true;
+};
+
 // TODO: refactor so that the hook returns functions separately
 export const useSigridStore = create<SigridState>((set, get) => ({
     settings: null,
@@ -711,9 +900,6 @@ export const useSigridStore = create<SigridState>((set, get) => ({
     error: null,
 
     setSettings: (settings: SigridSettings) => {
-        localStorage.setItem("sigridToken", settings.token);
-        localStorage.setItem("sigridCustomer", settings.customer.toLowerCase());
-        localStorage.setItem("sigridSystem", settings.system.toLowerCase());
         set({
             settings: {
                 token: settings.token,
@@ -819,19 +1005,6 @@ export const useSigridStore = create<SigridState>((set, get) => ({
             }
 
             const analysisDate = deriveAnalysisDate(securityFindings, refactoringCandidates, oshMetadata);
-
-            try {
-                localStorage.setItem(SECURITY_FINDINGS_KEY, JSON.stringify(securityFindings));
-                localStorage.setItem(OSH_DEPENDENCIES_KEY, JSON.stringify(oshDependencies));
-                if (oshMetadata) {
-                    localStorage.setItem(OSH_METADATA_KEY, JSON.stringify(oshMetadata));
-                } else {
-                    localStorage.removeItem(OSH_METADATA_KEY);
-                }
-                localStorage.setItem(REFACTORING_CANDIDATES_KEY, JSON.stringify(refactoringCandidates));
-                localStorage.setItem(ANALYSIS_DATE_KEY, analysisDate);
-            } catch {
-            }
             
             set({
                 securityFindings,

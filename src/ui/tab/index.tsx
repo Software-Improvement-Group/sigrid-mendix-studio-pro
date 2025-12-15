@@ -1,7 +1,7 @@
-import React, { StrictMode, useState, useEffect } from "react";
+import React, { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { IComponent } from "@mendix/extensions-api";
-import { useSigridStore } from "../../store/sigridStore";
+import { getStudioProApi, type IComponent } from "@mendix/extensions-api";
+import { flushSigridStorage, initSigridStorage, useSigridStore } from "../../store/sigridStore";
 import { ensureGlobalStyles } from "../dockablepane/styles";
 import { SettingsTab } from "./SettingsTab";
 
@@ -15,6 +15,7 @@ export function SigridSettings() {
     
     const setSettings = useSigridStore((state) => state.setSettings);
     const loadAllData = useSigridStore((state) => state.loadAllData);
+    const persistedSettings = useSigridStore((state) => state.settings);
 
     // TODO: maybe use css modules or other css method (vanilla extract) for less overhead 
     const saveSettings = async() => {
@@ -31,8 +32,8 @@ export function SigridSettings() {
 
         // Save to Zustand store
         setSettings(normalizedSettings);
-        
-    setStatusText("Settings saved! Loading data from QSM...");
+        await flushSigridStorage();
+        setStatusText("Settings saved! Loading data from QSM...");
         
         try {
             // Load all data from the API
@@ -47,28 +48,19 @@ export function SigridSettings() {
         } catch (error: any) {
             setStatusText("Settings saved but failed to load data: " + (error?.message || "Unknown error"));
         }
-    }
+    };
 
     const loadSettings = async() => {
-        var storedToken = localStorage.getItem('sigridToken');
-        if(storedToken) {
-            setSigridToken(storedToken);
+        const current = useSigridStore.getState().settings;
+        if (current) {
+            setSigridToken(current.token);
+            setSigridCustomer(current.customer);
+            setSigridSystem(current.system);
             setStatusText("Settings loaded");
+        } else {
+            setStatusText("No stored settings found");
         }
-        else {
-            setStatusText("No token found, not loaded");
-        }
-
-        var storedCustomer = localStorage.getItem('sigridCustomer');
-        if(storedCustomer) {
-            setSigridCustomer(storedCustomer);
-        }
-
-        var storedSystem = localStorage.getItem('sigridSystem');
-        if(storedSystem) {
-            setSigridSystem(storedSystem);
-        }
-    }
+    };
 
     // TODO: There's probably a more efficient way to do this than to
     // handle state changes and storage for each configuration option individually
@@ -90,9 +82,18 @@ export function SigridSettings() {
         ensureGlobalStyles();
     }, []);
 
-    useEffect(() =>{
-        loadSettings();
-    }, [])
+    useEffect(() => {
+        void loadSettings();
+    }, []);
+
+    useEffect(() => {
+        if (!persistedSettings) {
+            return;
+        }
+        setSigridToken(persistedSettings.token);
+        setSigridCustomer(persistedSettings.customer);
+        setSigridSystem(persistedSettings.system);
+    }, [persistedSettings?.token, persistedSettings?.customer, persistedSettings?.system]);
 
     return (
         <SettingsTab
@@ -111,6 +112,12 @@ export function SigridSettings() {
 
 export const component: IComponent = {
     async loaded(componentContext) {
+        const studioPro = getStudioProApi(componentContext);
+        try {
+            await initSigridStorage(studioPro.app.files);
+        } catch {
+        }
+
         createRoot(document.getElementById("root")!).render(
             <StrictMode>
                 <h1>QSM Settings</h1>

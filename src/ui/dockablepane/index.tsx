@@ -1,7 +1,7 @@
 import React, {StrictMode, useCallback, useEffect, useMemo, useState} from "react";
 import {createRoot} from "react-dom/client";
 import {getStudioProApi, type ActiveDocumentInfo, type IComponent} from "@mendix/extensions-api";
-import {useSigridStore} from "../../store/sigridStore";
+import { initSigridStorage, refreshSigridStorageFromAppFile, useSigridStore } from "../../store/sigridStore";
 import {ensureGlobalStyles} from "./styles";
 import {PrimaryTabs} from "./components/PrimaryTabs";
 import {SecurityTable} from "./components/SecurityTable";
@@ -14,16 +14,6 @@ type ScopeOption = "system" | "activeFile";
 type SigridFindingsProps = {
     studioPro: ReturnType<typeof getStudioProApi>;
 };
-
-const STORAGE_KEYS = new Set([
-    'sigridToken',
-    'sigridCustomer',
-    'sigridSystem',
-    'sigridSecurityFindings',
-    'sigridOshDependencies',
-    'sigridRefactoringCandidates',
-    'sigridAnalysisDate'
-]);
 
 export function SigridFindings({ studioPro }: SigridFindingsProps) {
     const [activePrimaryTab, setActivePrimaryTab] = useState<PrimaryTabType>('maintainability');
@@ -80,7 +70,6 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
 
     
     // TODO: index is too long, put all the logic into store and call actions here
-    // TODO: here it's better to do something like const {securityFindings, oshDependencies, refactoringCandidates, analysisDate, isLoading, error, settings, loadSettingsFromStorage, loadAllData} = useSigridStore();
     // Get data and actions from Zustand store
     const securityFindings = useSigridStore((state) => state.securityFindings);
     const oshDependencies = useSigridStore((state) => state.oshDependencies);
@@ -89,8 +78,13 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     const isLoading = useSigridStore((state) => state.isLoading);
     const error = useSigridStore((state) => state.error);
     const settings = useSigridStore((state) => state.settings);
-    const loadSettingsFromStorage = useSigridStore((state) => state.loadSettingsFromStorage);
     const loadAllData = useSigridStore((state) => state.loadAllData);
+    const handleReload = useCallback(async () => {
+        if (!settings) {
+            await refreshSigridStorageFromAppFile();
+        }
+        await loadAllData({ requireSettings: true });
+    }, [loadAllData, settings]);
 
     const scopeEnabled = activePrimaryTab !== 'openSourceHealth';
 
@@ -175,26 +169,27 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     // }, [activeFile, scope, scopeEnabled]);
 
     useEffect(() => {
-        const syncFromStorage = () => loadSettingsFromStorage();
-
-        syncFromStorage();
-
-        const handleStorage = (event: StorageEvent) => {
-            if (event.key && STORAGE_KEYS.has(event.key)) {
-                syncFromStorage();
-            }
-        };
-
-        window.addEventListener('storage', handleStorage);
-        return () => window.removeEventListener('storage', handleStorage);
-    }, [loadSettingsFromStorage]);
-
-    useEffect(() => {
         if (!settings) {
             return;
         }
+        const hasCachedData =
+            securityFindings.length > 0 ||
+            oshDependencies.length > 0 ||
+            Object.values(refactoringCandidates).some((items) => items.length > 0);
+        if (hasCachedData) {
+            return;
+        }
+
         void loadAllData();
-    }, [settings?.token, settings?.customer, settings?.system, loadAllData]);
+    }, [
+        settings?.token,
+        settings?.customer,
+        settings?.system,
+        securityFindings.length,
+        oshDependencies.length,
+        refactoringCandidates,
+        loadAllData,
+    ]);
 
     return (
         <div>
@@ -260,10 +255,10 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
             <div className="reload-button-row">
                 <button
                     className="reload-button"
-                    onClick={() => loadAllData({ requireSettings: true })}
+                    onClick={() => { void handleReload();}}
                     disabled={isLoading}
                 >
-                    {isLoading ? 'Loading...' : 'Reload data'}
+                    {isLoading ? 'Loading...' : 'Refresh findings'}
                 </button>
             </div>
         </div>
@@ -273,6 +268,11 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
 export const component: IComponent = {
     async loaded(componentContext) {
         const studioPro = getStudioProApi(componentContext);
+        try {
+            await initSigridStorage(studioPro.app.files);
+        } catch {
+        }
+
         createRoot(document.getElementById("root")!).render(
             <StrictMode>
                 <SigridFindings studioPro={studioPro}/>
