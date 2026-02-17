@@ -59,7 +59,7 @@ open -a "Studio Pro <VERSION>" /path/to/YourApp.mpr --args --enable-extension-de
    - **Customer**: Your Sigrid customer name
    - **System**: Your Sigrid system name
    - **Token**: Your [Sigrid API token](https://docs.sigrid-says.com/organization-integration/authentication-tokens.html)
-5. Click **Save settings**
+4. Click **Save settings**
 
 ## Usage
 
