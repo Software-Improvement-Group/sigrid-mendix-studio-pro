@@ -3,6 +3,7 @@ import type { SecurityFinding } from "../../../store/sigridStore";
 
 type SecurityTableProps = {
     findings: SecurityFinding[];
+    onOpenFiles?: (files: string[]) => void;
 };
 
 export const SEVERITY_SYMBOLS: Record<string, string> = {
@@ -33,29 +34,45 @@ const formatStatus = (status: string) => {
     return status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
 };
 
-export const SecurityTable: React.FC<SecurityTableProps> = ({ findings }) => (
-    <table id="sigridFindings" className="sigrid-table">
-        <thead>
-            <tr>
-                <th>Risk</th>
-                <th>Location</th>
-                <th>Description</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {findings.length > 0 ? (
-                sortFindings(findings).map((finding) => (
-                    <tr key={finding.id}>
-                        <td>{getRiskSymbol(finding.severity)}</td>
-                        <td>{finding.displayFilePath ?? finding.filePath ?? ""}</td>
-                        <td>{finding.name}</td>
-                        <td>{formatStatus(finding.status)}</td>
-                    </tr>
-                ))
-            ) : (
-                <tr><td colSpan={4}>No security findings found</td></tr>
-            )}
-        </tbody>
-    </table>
-);
+export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFiles }) => {
+    
+    const handleDoubleClick = (finding: SecurityFinding) => {
+        if (!onOpenFiles) return;
+
+        const file = finding.filePath;
+        if (file) {
+            onOpenFiles([file]);
+        }
+    };
+
+    return (
+        <table id="sigridFindings" className="sigrid-table">
+            <thead>
+                <tr>
+                    <th>Risk</th>
+                    <th>Location</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {findings.length > 0 ? (
+                    sortFindings(findings).map((finding) => (
+                        <tr 
+                            key={finding.id}
+                            onDoubleClick={() => handleDoubleClick(finding)}
+                            title="Double-click to open file"
+                        >
+                            <td>{getRiskSymbol(finding.severity)}</td>
+                            <td className="clickable-location">{finding.displayFilePath ?? finding.filePath ?? ""}</td>
+                            <td>{finding.name}</td>
+                            <td>{formatStatus(finding.status)}</td>
+                        </tr>
+                    ))
+                ) : (
+                    <tr><td colSpan={4}>No security findings found</td></tr>
+                )}
+            </tbody>
+        </table>
+    );
+};

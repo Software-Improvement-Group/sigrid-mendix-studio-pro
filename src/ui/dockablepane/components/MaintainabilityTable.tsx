@@ -1,8 +1,10 @@
 import React from "react";
 import {RefactoringCandidate, RefactoringCandidatesMap, RefactoringCategory} from "../../../store/sigridStore";
+import { toDisplayPath } from "../utils/pathUtils";
 
 type MaintainabilityTableProps = {
     refactoringCandidates: RefactoringCandidatesMap;
+    onOpenFiles?: (files: string[]) => void;
 };
 
 const RISK_CATEGORY_SYMBOLS: Record<string, string> = {
@@ -64,46 +66,61 @@ const formatDescription = (rc: RefactoringCandidate) => {
 
 const formatLocation = (rc: RefactoringCandidate) => {
     if (rc.locations.length === 0) {
-        return formatFilePath(rc.file ?? "");
+        return toDisplayPath(rc.file ?? "");
     } else if (rc.locations.length === 1) {
-        return formatFilePath(rc.locations[0].file);
+        return toDisplayPath(rc.locations[0].file);
     } else if (rc.locations.length === 2) {
-        return `${formatFilePath(rc.locations[0].file)} and ${formatFilePath(rc.locations[1].file)}`;
+        return `${toDisplayPath(rc.locations[0].file)} and ${toDisplayPath(rc.locations[1].file)}`;
     } else {
-        return `${formatFilePath(rc.locations[0].file)}, ${formatFilePath(rc.locations[1].file)}, and ${rc.locations.length - 2} other files`;
+        return `${toDisplayPath(rc.locations[0].file)}, ${toDisplayPath(rc.locations[1].file)}, and ${rc.locations.length - 2} other files`;
     }
 };
 
-const formatFilePath = (filePath: string) => {
-    if (filePath.indexOf("/") === -1) {
-        return filePath;
-    }
-    return ".../" + filePath.substring(filePath.lastIndexOf("/") + 1);
-};
+export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refactoringCandidates, onOpenFiles }) => {
+    
+    const handleRowDoubleClick = (rc: RefactoringCandidate) => {
+        if (!onOpenFiles) return;
 
-export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refactoringCandidates }) => (
-    <table id="sigridFindings" className="sigrid-table">
-        <thead>
-        <tr>
-            <th>Risk</th>
-            <th>Location</th>
-            <th>Description</th>
-            <th>Status</th>
-        </tr>
-        </thead>
-        <tbody>
-        {sortRefactoringCandidates(refactoringCandidates).length > 0 ? (
-            sortRefactoringCandidates(refactoringCandidates).map((rc) => (
-                <tr key={rc.id}>
-                    <td>{getRiskSymbol(rc.severity)}</td>
-                    <td>{formatLocation(rc)}</td>
-                    <td>{formatDescription(rc)}</td>
-                    <td>{formatStatus(rc.status)}</td>
-                </tr>
-            ))
-        ) : (
-            <tr><td colSpan={4}>No refactoring candidates found</td></tr>
-        )}
-        </tbody>
-    </table>
-);
+        let files: string[] = [];
+        if (rc.locations.length > 0) {
+            files = rc.locations.map(loc => loc.file).filter(Boolean);
+        } else if (rc.file) {
+            files = [rc.file];
+        }
+
+        if (files.length > 0) {
+            onOpenFiles(files);
+        }
+    };
+
+    return (
+        <table id="sigridFindings" className="sigrid-table">
+            <thead>
+            <tr>
+                <th>Risk</th>
+                <th>Location</th>
+                <th>Description</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            {sortRefactoringCandidates(refactoringCandidates).length > 0 ? (
+                sortRefactoringCandidates(refactoringCandidates).map((rc) => (
+                    <tr 
+                        key={rc.id} 
+                        onDoubleClick={() => handleRowDoubleClick(rc)}
+                        title="Double-click to open file(s)"
+                    >
+                        <td>{getRiskSymbol(rc.severity)}</td>
+                        <td className="clickable-location">{formatLocation(rc)}</td>
+                        <td>{formatDescription(rc)}</td>
+                        <td>{formatStatus(rc.status)}</td>
+                    </tr>
+                ))
+            ) : (
+                <tr><td colSpan={4}>No refactoring candidates found</td></tr>
+            )}
+            </tbody>
+        </table>
+    );
+};
