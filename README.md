@@ -20,13 +20,25 @@ cd sigrid-mendix-studio-pro
 npm install
 ```
 
-### 2. Configure Build Path
+### 2. Configure App Path
 
-Edit `build-extension.mjs` and set your Mendix app path:
+Edit `config.mjs` and set your Mendix app directory path and Studio Pro version:
 
 ```javascript
-const appDir = "/path/to/your/Mendix/App";
+// 1. The path to your Mendix project folder
+// Windows example: "C:\\Users\\username\\Mendix\\MyApp" (Note the double backslashes)
+// macOS example: "/Users/username/Mendix/MyApp"
+export const appDir = "/path/to/your/Mendix/App";
+
+// 2. The Studio Pro version you are using (e.g. "11.7.0")
+export const studioProVersion = "11.7.0";
+
+// 3. macOS only: The name of your Studio Pro application in /Applications
+// Example: "Studio Pro 11.7.0" or "Studio Pro 11.7.0 Beta"
+export const studioProApp = "Studio Pro 11.7.0"; 
 ```
+
+This configuration is used for both building the extension and launching Studio Pro.
 
 ### 3. Build
 
@@ -37,19 +49,13 @@ npm run build:dev    # Build with watch mode
 
 ### 4. Launch Studio Pro
 
-**macOS:**
+You can now launch Studio Pro directly using the configured path:
 
 ```bash
-# Replace <VERSION> and /path/to/YourApp.mpr with your actual values
-open -a "Studio Pro <VERSION>" /path/to/YourApp.mpr --args --enable-extension-development
+npm start
 ```
 
-**Windows:**
-
-```powershell
-"C:\Program Files\Mendix\11.7.0\modeler\studiopro.exe" ^
-  --enable-extension-development /path/to/YourApp.mpr
-```
+This will automatically find the `.mpr` file in your `appDir` and enable extension development mode.
 
 ## Configuration
 
@@ -65,8 +71,10 @@ open -a "Studio Pro <VERSION>" /path/to/YourApp.mpr --args --enable-extension-de
 
 1. Locate the **Extensions** menu in Studio Pro's main menu bar.
 2. Select **QSM** > **Show QSM findings**.
-3. View findings in the dockable pane at the bottom.
-4. Use the **Reload data** button to refresh.
+3. View findings in the dockable pane:
+   - **Scope Selector**: Filter findings between the **Entire system** or the **Selected file** currently open in Studio Pro.
+   - **Navigation**: **Double-click** any blue finding to automatically open and focus the corresponding document in the Studio Pro editor. Non-clickable findings are displayed in standard black text.
+4. Use the **Reload data** button to refresh findings from Sigrid.
 
 ## License
 

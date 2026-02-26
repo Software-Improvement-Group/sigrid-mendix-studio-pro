@@ -1,12 +1,9 @@
 import * as esbuild from 'esbuild'
 import {copyToAppPlugin, copyManifestPlugin, commonConfig} from "./build.helpers.mjs"
 import parseArgs from "minimist"
+import { appDir } from "./config.mjs"
 
 const outDir = `dist/QSM`
-// Set this to your Mendix app directory path
-// Example (macOS): "/Users/username/Mendix/MyApp"
-// Example (Windows): "C:\\Users\\username\\Mendix\\MyApp"
-const appDir = ""
 const extensionDirectoryName = "extensions"
 
 const entryPoints = [

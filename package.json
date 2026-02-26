@@ -18,7 +18,8 @@
   ],
   "scripts": {
     "build": "tsc --noEmit && node build-extension.mjs",
-    "build:dev": "tsc --noEmit && node build-extension.mjs --watch"
+    "build:dev": "tsc --noEmit && node build-extension.mjs --watch",
+    "start": "node scripts/start.mjs"
   },
   "dependencies": {
     "@mendix/extensions-api": "^0.6.0-mendix.11.7.0",
