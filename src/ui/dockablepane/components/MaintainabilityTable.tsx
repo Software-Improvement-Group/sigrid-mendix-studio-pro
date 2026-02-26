@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {RefactoringCandidate, RefactoringCandidatesMap, RefactoringCategory} from "../../../store/sigridStore";
 import { toDisplayPath } from "../utils/pathUtils";
+import { getStudioProApi } from "@mendix/extensions-api";
+import { getClickableIds } from "../utils/fileNavigation";
 
 type MaintainabilityTableProps = {
     refactoringCandidates: RefactoringCandidatesMap;
     onOpenFiles?: (files: string[]) => void;
+    studioPro: ReturnType<typeof getStudioProApi>;
 };
 
 const RISK_CATEGORY_SYMBOLS: Record<string, string> = {
@@ -76,11 +79,32 @@ const formatLocation = (rc: RefactoringCandidate) => {
     }
 };
 
-export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refactoringCandidates, onOpenFiles }) => {
+export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refactoringCandidates, onOpenFiles, studioPro }) => {
+    const [clickableIds, setClickableIds] = useState<Set<string>>(new Set());
+
+    const sortedCandidates = sortRefactoringCandidates(refactoringCandidates);
+    useEffect(() => {
+        const checkClickability = async () => {
+            const clickable = await getClickableIds(
+                studioPro, 
+                sortedCandidates, 
+                (rc) => {
+                    if (rc.locations.length > 0) {
+                        return rc.locations.map(loc => loc.file).filter(Boolean);
+                    } else if (rc.file) {
+                        return [rc.file];
+                    }
+                    return [];
+                }
+            );
+            setClickableIds(clickable);
+        };
+        void checkClickability();
+    }, [refactoringCandidates, studioPro]);
     
     const handleRowDoubleClick = (rc: RefactoringCandidate) => {
-        if (!onOpenFiles) return;
-
+        if (!onOpenFiles || !clickableIds.has(rc.id)) return
+        
         let files: string[] = [];
         if (rc.locations.length > 0) {
             files = rc.locations.map(loc => loc.file).filter(Boolean);
@@ -104,19 +128,23 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
             </tr>
             </thead>
             <tbody>
-            {sortRefactoringCandidates(refactoringCandidates).length > 0 ? (
-                sortRefactoringCandidates(refactoringCandidates).map((rc) => (
-                    <tr 
-                        key={rc.id} 
-                        onDoubleClick={() => handleRowDoubleClick(rc)}
-                        title="Double-click to open file(s)"
-                    >
-                        <td>{getRiskSymbol(rc.severity)}</td>
-                        <td className="clickable-location">{formatLocation(rc)}</td>
-                        <td>{formatDescription(rc)}</td>
-                        <td>{formatStatus(rc.status)}</td>
-                    </tr>
-                ))
+            {sortedCandidates.length > 0 ? (
+                sortedCandidates.map((rc) => {
+                    const isClickable = clickableIds.has(rc.id);
+                    return (
+                        <tr 
+                            key={rc.id} 
+                            onDoubleClick={() => handleRowDoubleClick(rc)}
+                            title={isClickable ? "Double-click to open file(s)" : ""}
+                            className={isClickable ? "clickable-row" : ""}
+                        >
+                            <td>{getRiskSymbol(rc.severity)}</td>
+                            <td className="clickable-location">{formatLocation(rc)}</td>
+                            <td>{formatDescription(rc)}</td>
+                            <td>{formatStatus(rc.status)}</td>
+                        </tr>
+                    );
+                })
             ) : (
                 <tr><td colSpan={4}>No refactoring candidates found</td></tr>
             )}

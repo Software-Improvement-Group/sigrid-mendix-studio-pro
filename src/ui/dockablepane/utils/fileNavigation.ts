@@ -21,7 +21,7 @@ const MENDIX_STRUCTURAL_MAP: Record<string, string> = {
 };
 
 
-async function getAllDocuments(studioPro: StudioProApi): Promise<MendixDocument[]> {
+export async function getAllDocuments(studioPro: StudioProApi): Promise<MendixDocument[]> {
     const allDocs: MendixDocument[] = [];
     const modules = await studioPro.app.model.projects.getModules();
 
@@ -63,35 +63,36 @@ async function collectFromContainer(
  * 2. Strips repository-level prefixes (e.g., -main/).
  * 3. Only matches if Name, Module, and inferred Type align.
  */
-export async function openFile(studioPro: StudioProApi, filePath: string): Promise<void> {
-    if (!filePath || !studioPro) return;
+export async function getMendixDocument(
+    studioPro: StudioProApi, 
+    filePath: string, 
+    candidates?: MendixDocument[]
+): Promise<MendixDocument | null> {
+    if (!filePath || !studioPro) return null;
 
-    const normalizedPath = normalizePath(filePath).toLowerCase();
     const { stem, segments } = getPathInfo(filePath);
     const lowerSegments = segments.map(s => s.toLowerCase());
 
     // --- 1. Identify the App Root and Inferred Type ---
     let inferredType = "";
-    let cleanSegments = [...lowerSegments];
     
     const rootIndex = lowerSegments.findIndex(seg => MENDIX_STRUCTURAL_MAP[seg]);
     
     if (rootIndex !== -1) {
         inferredType = MENDIX_STRUCTURAL_MAP[lowerSegments[rootIndex]];
-        cleanSegments = lowerSegments.slice(rootIndex);
     }
 
     try {
-        const candidates = await getAllDocuments(studioPro);
+        const allCandidates = candidates || await getAllDocuments(studioPro);
         const lowerStem = stem.toLowerCase();
 
         // --- 2. Filter by Name ---
-        const nameMatches = candidates.filter(doc => doc.name.toLowerCase() === lowerStem);
-        if (nameMatches.length === 0) return;
+        const nameMatches = allCandidates.filter(doc => doc.name.toLowerCase() === lowerStem);
+        if (nameMatches.length === 0) return null;
 
         // --- 3. Filter by Module Context ---
         const contextMatches = nameMatches.filter(doc => 
-            cleanSegments.includes(doc.moduleName.toLowerCase())
+            lowerSegments.includes(doc.moduleName.toLowerCase())
         );
 
         // --- 4. Disambiguate by Type (Highest Accuracy) ---
@@ -105,11 +106,46 @@ export async function openFile(studioPro: StudioProApi, filePath: string): Promi
             finalMatch = nameMatches[0];
         }
 
-        // --- 5. Navigate ---
-        if (finalMatch) {
-            await studioPro.ui.editors.editDocument(finalMatch.id);
-        }
+        return finalMatch ?? null;
     } catch (e) {
-        // Navigation failed
+        return null;
+    }
+}
+
+export async function getClickableIds<T extends { id: string }>(
+    studioPro: StudioProApi,
+    items: T[],
+    getFilePaths: (item: T) => string[]
+): Promise<Set<string>> {
+    try {
+        const candidates = await getAllDocuments(studioPro);
+        const clickable = new Set<string>();
+
+        for (const item of items) {
+            const paths = getFilePaths(item);
+            if (paths.length === 0) continue;
+
+            // Check if at least one file path matches a Mendix document
+            for (const path of paths) {
+                const doc = await getMendixDocument(studioPro, path, candidates);
+                if (doc) {
+                    clickable.add(item.id);
+                    break;
+                }
+            }
+        }
+        return clickable;
+    } catch (e) {
+        console.warn("Failed to determine clickable IDs", e);
+        return new Set();
+    }
+}
+
+export async function openFile(studioPro: StudioProApi, filePath: string): Promise<void> {
+    const finalMatch = await getMendixDocument(studioPro, filePath);
+
+    // --- 5. Navigate ---
+    if (finalMatch) {
+        await studioPro.ui.editors.editDocument(finalMatch.id);
     }
 }

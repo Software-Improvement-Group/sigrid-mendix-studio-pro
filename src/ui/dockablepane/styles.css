@@ -139,6 +139,9 @@ body {
 
 .sigrid-table tbody tr:hover {
     background-color: #f0f7ff;
+}
+
+.sigrid-table tbody tr.clickable-row:hover {
     cursor: pointer;
 }
 
@@ -325,9 +328,13 @@ body {
 }
 
 .clickable-location {
+    color: inherit;
+    text-decoration: none;
+}
+
+.clickable-row .clickable-location {
     color: #0b57d0;
     text-decoration: underline;
-    cursor: pointer;
 }
 
 .description-cell {

@@ -247,6 +247,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
                         <SecurityTable 
                             findings={filteredSecurityFindings}
                             onOpenFiles={handleOpenFiles}
+                            studioPro={studioPro}
                         />
                     )}
                     
@@ -258,6 +259,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
                         <MaintainabilityTable 
                             refactoringCandidates={filteredRefactoringCandidates} 
                             onOpenFiles={handleOpenFiles}
+                            studioPro={studioPro}
                         />
                     )}
                 </>

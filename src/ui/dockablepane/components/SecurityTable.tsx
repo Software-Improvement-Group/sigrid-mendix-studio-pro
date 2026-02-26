@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import type { SecurityFinding } from "../../../store/sigridStore";
+import { getStudioProApi } from "@mendix/extensions-api";
+import { getClickableIds } from "../utils/fileNavigation";
 
 type SecurityTableProps = {
     findings: SecurityFinding[];
     onOpenFiles?: (files: string[]) => void;
+    studioPro: ReturnType<typeof getStudioProApi>;
 };
 
 export const SEVERITY_SYMBOLS: Record<string, string> = {
@@ -34,10 +37,22 @@ const formatStatus = (status: string) => {
     return status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
 };
 
-export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFiles }) => {
+export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFiles, studioPro }) => {
+    const [clickableIds, setClickableIds] = useState<Set<string>>(new Set());
+    useEffect(() => {
+        const checkClickability = async () => {
+            const clickable = await getClickableIds(
+                studioPro, 
+                findings, 
+                (f) => f.filePath ? [f.filePath] : []
+            );
+            setClickableIds(clickable);
+        };
+        void checkClickability();
+    }, [findings, studioPro]);
     
     const handleDoubleClick = (finding: SecurityFinding) => {
-        if (!onOpenFiles) return;
+        if (!onOpenFiles || !clickableIds.has(finding.id)) return;
 
         const file = finding.filePath;
         if (file) {
@@ -57,18 +72,22 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
             </thead>
             <tbody>
                 {findings.length > 0 ? (
-                    sortFindings(findings).map((finding) => (
-                        <tr 
-                            key={finding.id}
-                            onDoubleClick={() => handleDoubleClick(finding)}
-                            title="Double-click to open file"
-                        >
-                            <td>{getRiskSymbol(finding.severity)}</td>
-                            <td className="clickable-location">{finding.displayFilePath ?? finding.filePath ?? ""}</td>
-                            <td>{finding.name}</td>
-                            <td>{formatStatus(finding.status)}</td>
-                        </tr>
-                    ))
+                    sortFindings(findings).map((finding) => {
+                        const isClickable = clickableIds.has(finding.id);
+                        return (
+                            <tr 
+                                key={finding.id}
+                                onDoubleClick={() => handleDoubleClick(finding)}
+                                title={isClickable ? "Double-click to open file" : ""}
+                                className={isClickable ? "clickable-row" : ""}
+                            >
+                                <td>{getRiskSymbol(finding.severity)}</td>
+                                <td className="clickable-location">{finding.displayFilePath ?? finding.filePath ?? ""}</td>
+                                <td>{finding.name}</td>
+                                <td>{formatStatus(finding.status)}</td>
+                            </tr>
+                        );
+                    })
                 ) : (
                     <tr><td colSpan={4}>No security findings found</td></tr>
                 )}
