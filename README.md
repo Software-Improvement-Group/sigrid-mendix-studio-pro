@@ -66,7 +66,7 @@ open -a "Studio Pro <VERSION>" /path/to/YourApp.mpr --args --enable-extension-de
 1. Locate the **Extensions** menu in Studio Pro's main menu bar.
 2. Select **QSM** > **Show QSM findings**.
 3. View findings in the dockable pane at the bottom.
-4. Use the **Reload data** button to refresh.
+4. Use the **Reload data** button to refresh findings from Sigrid.
 
 ## License
 
