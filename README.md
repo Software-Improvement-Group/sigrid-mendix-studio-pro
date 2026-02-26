@@ -5,7 +5,7 @@ directly into your development environment.
 
 ## Prerequisites
 
-- Mendix Studio Pro 11.2.0 or higher
+- Mendix Studio Pro 11.7.0 or higher
 - Node.js 22.x or higher
 - You have a Sigrid account
 - You have a [Sigrid API token](https://docs.sigrid-says.com/organization-integration/authentication-tokens.html)
@@ -40,36 +40,33 @@ npm run build:dev    # Build with watch mode
 **macOS:**
 
 ```bash
-# Replace version number with your installed version
-/Applications/Studio\ Pro\ <VERSION>.app/Contents/MacOS/studiopro \
-  --enable-extension-development
+# Replace <VERSION> and /path/to/YourApp.mpr with your actual values
+open -a "Studio Pro <VERSION>" /path/to/YourApp.mpr --args --enable-extension-development
 ```
 
 **Windows:**
 
 ```powershell
-"C:\Program Files\Mendix\11.2.0\modeler\studiopro.exe" ^
-  --enable-extension-development
+"C:\Program Files\Mendix\11.7.0\modeler\studiopro.exe" ^
+  --enable-extension-development /path/to/YourApp.mpr
 ```
 
 ## Configuration
 
-1. Locate the "Extensions" menu in Studio Pro's main menu bar.
-2. Select the "QSM extension".
-3. Select "QSM settings".
-4. Enter your Sigrid/QSM credentials:
+1. Locate the **Extensions** menu in Studio Pro's main menu bar.
+2. Select **QSM** > **QSM Settings**.
+3. Enter your Sigrid/QSM credentials:
    - **Customer**: Your Sigrid customer name
    - **System**: Your Sigrid system name
    - **Token**: Your [Sigrid API token](https://docs.sigrid-says.com/organization-integration/authentication-tokens.html)
-5. Click **Save settings**
+4. Click **Save settings**
 
 ## Usage
 
-1. Locate the "Extensions" menu in Studio Pro's main menu bar.
-2. Select the "QSM extension".
-3. Select "Show QSM findings".
-4. Click **Refresh findings**
-5. View findings in the table
+1. Locate the **Extensions** menu in Studio Pro's main menu bar.
+2. Select **QSM** > **Show QSM findings**.
+3. View findings in the dockable pane at the bottom.
+4. Use the **Reload data** button to refresh findings from Sigrid.
 
 ## License
 

@@ -1,56 +1,66 @@
-import { IComponent, getStudioProApi } from "@mendix/extensions-api";
+import { IComponent, getStudioProApi, type DockablePaneHandle } from "@mendix/extensions-api";
 
 // Gets an instance of the Studio Pro API by calling getStudioProApi and passing the componentContext
 export const component: IComponent = {
     async loaded(componentContext) {
         const studioPro = getStudioProApi(componentContext);
         try {
-            // Add a menu item to the Extensions menu
+            let paneHandle: DockablePaneHandle | null = null;
+
+            const ensurePaneRegistered = async (): Promise<DockablePaneHandle> => {
+                if (!paneHandle) {
+                    paneHandle = await studioPro.ui.panes.register(
+                        {
+                            title: "QSM findings",
+                            initialPosition: "bottom"
+                        },
+                        {
+                            componentName: "extension/QSM",
+                            uiEntrypoint: "dockablepane"
+                        }
+                    );
+                }
+                return paneHandle;
+            };
+
+            // Add menu items with action callbacks
             await studioPro.ui.extensionsMenu.add({
                 menuId: "qsmextension.MainMenu",
                 caption: "QSM",
                 subMenus: [
-                    { menuId: "qsmextension.ShowTabMenuItem", caption: "QSM Settings" },
-                    { menuId: "qsmextension.ShowDockMenuItem", caption: "Show QSM findings" },
-                    { menuId: "qsmextension.HideDockMenuItem", caption: "Hide QSM findings" },
+                    {
+                        menuId: "qsmextension.ShowTabMenuItem",
+                        caption: "QSM Settings",
+                        action: async () => {
+                            await studioPro.ui.tabs.open(
+                                {
+                                    title: "QSM Configuration",
+                                },
+                                {
+                                    componentName: "extension/QSM",
+                                    uiEntrypoint: "tab",
+                                }
+                            );
+                        },
+                    },
+                    {
+                        menuId: "qsmextension.ShowDockMenuItem",
+                        caption: "Show QSM findings",
+                        action: async () => {
+                            const handle = await ensurePaneRegistered();
+                            await studioPro.ui.panes.open(handle);
+                        },
+                    },
+                    {
+                        menuId: "qsmextension.HideDockMenuItem",
+                        caption: "Hide QSM findings",
+                        action: async () => {
+                            const handle = await ensurePaneRegistered();
+                            await studioPro.ui.panes.close(handle);
+                        },
+                    },
                 ],
             });
-
-            // Register the dockable pane for QSM findings
-            const paneHandle = await studioPro.ui.panes.register(
-                {
-                    title: "QSM findings",
-                    initialPosition: "bottom"
-                },
-                {
-                    componentName: "extension/QSM",
-                    uiEntrypoint: "dockablepane"
-                }
-            );
-
-            // Open a tab or show/hide pane when menu items are clicked
-            studioPro.ui.extensionsMenu.addEventListener(
-                "menuItemActivated",
-                (args) => {
-                    if (args.menuId === "qsmextension.ShowTabMenuItem") {
-                        studioPro.ui.tabs.open(
-                            {
-                                title: "QSM Configuration",
-                            },
-                            {
-                                componentName: "extension/QSM",
-                                uiEntrypoint: "tab",
-                            }
-                        );
-                    }
-                    else if (args.menuId === "qsmextension.ShowDockMenuItem") {
-                        studioPro.ui.panes.open(paneHandle);
-                    }
-                    else if (args.menuId === "qsmextension.HideDockMenuItem") {
-                        studioPro.ui.panes.close(paneHandle);
-                    }
-                }
-            );
 
             // log successful initialization
             console.log("QSM extension loaded");
