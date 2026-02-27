@@ -8,6 +8,9 @@ import {SecurityTable} from "./components/SecurityTable";
 import {OpenSourceHealthTable} from "./components/OpenSourceHealthTable";
 import {PRIMARY_TABS, type PrimaryTabType} from "./tabConfig";
 import {MaintainabilityTable} from "./components/MaintainabilityTable";
+import {FileSelectionDialog} from "./components/FileSelectionDialog";
+import {openFile} from "./utils/fileNavigation";
+import {getPathInfo} from "./utils/pathUtils";
 
 type ScopeOption = "system" | "activeFile";
 
@@ -29,6 +32,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     const [activePrimaryTab, setActivePrimaryTab] = useState<PrimaryTabType>('maintainability');
     const [scope, setScope] = useState<ScopeOption>('system');
     const [activeFile, setActiveFile] = useState<ActiveDocumentInfo | null>(null);
+    const [dialogFiles, setDialogFiles] = useState<string[] | null>(null);
 
     useEffect(() => {
         ensureGlobalStyles();
@@ -37,11 +41,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     useEffect(() => {
         let isUnmounted = false;
 
-        const editors = studioPro.ui?.editors as {
-            getActiveDocument: () => Promise<ActiveDocumentInfo | null>;
-            addEventListener?: (event: "activeDocumentChanged", handler: (args: { info: ActiveDocumentInfo | null }) => void) => void;
-            removeEventListener?: (event: "activeDocumentChanged", handler: (args: { info: ActiveDocumentInfo | null }) => void) => void;
-        } | undefined;
+        const editors = studioPro.ui?.editors;
 
         if (!editors) {
             return () => {
@@ -78,19 +78,38 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
         };
     }, [studioPro]);
 
+    const handleOpenFiles = useCallback((files: string[]) => {
+        if (!files || files.length === 0) {
+            return;
+        }
+
+        if (files.length === 1) {
+            openFile(studioPro, files[0]);
+        } else {
+            setDialogFiles(files);
+        }
+    }, [studioPro]);
+
+    const handleDialogSelect = useCallback((file: string) => {
+        setDialogFiles(null);
+        openFile(studioPro, file);
+    }, [studioPro]);
+
+    const handleDialogClose = useCallback(() => {
+        setDialogFiles(null);
+    }, []);
     
-    // TODO: index is too long, put all the logic into store and call actions here
-    // TODO: here it's better to do something like const {securityFindings, oshDependencies, refactoringCandidates, analysisDate, isLoading, error, settings, loadSettingsFromStorage, loadAllData} = useSigridStore();
-    // Get data and actions from Zustand store
-    const securityFindings = useSigridStore((state) => state.securityFindings);
-    const oshDependencies = useSigridStore((state) => state.oshDependencies);
-    const refactoringCandidates = useSigridStore((state) => state.refactoringCandidates);
-    const analysisDate = useSigridStore((state) => state.analysisDate);
-    const isLoading = useSigridStore((state) => state.isLoading);
-    const error = useSigridStore((state) => state.error);
-    const settings = useSigridStore((state) => state.settings);
-    const loadSettingsFromStorage = useSigridStore((state) => state.loadSettingsFromStorage);
-    const loadAllData = useSigridStore((state) => state.loadAllData);
+    const {
+        securityFindings,
+        oshDependencies,
+        refactoringCandidates,
+        analysisDate,
+        isLoading,
+        error,
+        settings,
+        loadSettingsFromStorage,
+        loadAllData
+    } = useSigridStore();
 
     const scopeEnabled = activePrimaryTab !== 'openSourceHealth';
 
@@ -101,26 +120,20 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
             return false;
         }
 
-        const normalizedPath = filePath.replace(/\\/g, "/").toLowerCase();
-        const fileName = normalizedPath.substring(normalizedPath.lastIndexOf("/") + 1);
-        const fileStem = fileName.split(".")[0];
+        const { fileName, stem, segments } = getPathInfo(filePath.toLowerCase());
+        if (segments.length === 0) return false;
+
         const targetFileName = activeFile.documentName.toLowerCase();
 
-        if (fileStem === targetFileName) {
-            return true;
-        }
-
-        if (fileName.startsWith(`${targetFileName}.`)) {
-            return true;
-        }
-
-        if (fileName === targetFileName) {
+        if (stem === targetFileName || fileName === targetFileName) {
             return true;
         }
 
         if (activeFile.moduleName) {
-            const moduleSegment = `/${activeFile.moduleName.toLowerCase()}/`;
-            if (normalizedPath.includes(moduleSegment) && fileName.includes(targetFileName)) {
+            const targetModule = activeFile.moduleName.toLowerCase();
+            // Check if any segment matches the module name AND the filename matches the target
+            const hasModuleMatch = segments.some(s => s === targetModule);
+            if (hasModuleMatch && (fileName.includes(targetFileName) || targetFileName.includes(stem))) {
                 return true;
             }
         }
@@ -162,18 +175,6 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     const securityCount = filteredSecurityFindings.length;
     const openSourceHealthCount = oshDependencies.length;
 
-    // Keeping this here for debugging purposes, will remove after i make sure the mendix file and sigrid file paths match correctly
-    // const scopeDescription = useMemo(() => {
-    //     if (scope === "system" || !scopeEnabled) {
-    //         return "Scope: Entire system";
-    //     }
-    //     if (!activeFile?.documentName) {
-    //         return "Scope: open a file to filter";
-    //     }
-    //     const modulePrefix = activeFile.moduleName ? `${activeFile.moduleName} / ` : "";
-    //     return `Scope: ${modulePrefix}${activeFile.documentName}`;
-    // }, [activeFile, scope, scopeEnabled]);
-
     useEffect(() => {
         const syncFromStorage = () => loadSettingsFromStorage();
 
@@ -214,7 +215,6 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
             </div>
             {scopeEnabled && (
                 <div className="scope-toggle" aria-label="Findings scope selector">
-                    {/* <span>{scopeDescription}</span> */}
                     <div className="scope-toggle-buttons">
                         <button
                             type="button"
@@ -244,7 +244,11 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
             {!isLoading && !error && (
                 <>
                     {activePrimaryTab === 'security' && (
-                        <SecurityTable findings={filteredSecurityFindings} />
+                        <SecurityTable 
+                            findings={filteredSecurityFindings}
+                            onOpenFiles={handleOpenFiles}
+                            studioPro={studioPro}
+                        />
                     )}
                     
                     {activePrimaryTab === 'openSourceHealth' && (
@@ -252,7 +256,11 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
                     )}
                     
                     {activePrimaryTab === 'maintainability' && (
-                        <MaintainabilityTable refactoringCandidates={filteredRefactoringCandidates} />
+                        <MaintainabilityTable 
+                            refactoringCandidates={filteredRefactoringCandidates} 
+                            onOpenFiles={handleOpenFiles}
+                            studioPro={studioPro}
+                        />
                     )}
                 </>
             )}
@@ -266,6 +274,14 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
                     {isLoading ? 'Loading...' : 'Reload data'}
                 </button>
             </div>
+            
+            {dialogFiles && (
+                <FileSelectionDialog 
+                    files={dialogFiles} 
+                    onSelect={handleDialogSelect} 
+                    onClose={handleDialogClose} 
+                />
+            )}
         </div>
     );
 }
