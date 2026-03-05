@@ -35,3 +35,7 @@ export function stripMendixExtensions(path: string | null | undefined): string {
         .replace(/\.mx\.json$/i, "")
         .replace(/\.mendix/i, "");
 }
+
+export function formatStatus(status: string): string {
+    return status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
+}

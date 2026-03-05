@@ -9,6 +9,7 @@ import {OpenSourceHealthTable} from "./components/OpenSourceHealthTable";
 import {PRIMARY_TABS, type PrimaryTabType} from "./tabConfig";
 import {MaintainabilityTable} from "./components/MaintainabilityTable";
 import {FileSelectionDialog} from "./components/FileSelectionDialog";
+import {PathInfoDialog} from "./components/PathInfoDialog";
 import {openFile} from "./utils/fileNavigation";
 import {getPathInfo} from "./utils/pathUtils";
 
@@ -33,6 +34,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     const [scope, setScope] = useState<ScopeOption>('system');
     const [activeFile, setActiveFile] = useState<ActiveDocumentInfo | null>(null);
     const [dialogFiles, setDialogFiles] = useState<string[] | null>(null);
+    const [pathInfoFiles, setPathInfoFiles] = useState<string[] | null>(null);
 
     useEffect(() => {
         ensureGlobalStyles();
@@ -98,6 +100,10 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     const handleDialogClose = useCallback(() => {
         setDialogFiles(null);
     }, []);
+
+    const handleShowPathInfo = useCallback((files: string[]) => {
+        setPathInfoFiles(files);
+    }, []);
     
     const {
         securityFindings,
@@ -108,8 +114,25 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
         error,
         settings,
         loadSettingsFromStorage,
-        loadAllData
+        loadAllData,
+        requestNewScan
     } = useSigridStore();
+
+    const [scanStatus, setScanStatus] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+    const handleRequestScan = async () => {
+        setScanStatus({ message: "Requesting new scan...", type: 'info' });
+        const result = await requestNewScan();
+        setScanStatus({ 
+            message: result.message, 
+            type: result.success ? 'success' : 'error' 
+        });
+        
+        // Clear success message after 5 seconds
+        if (result.success) {
+            setTimeout(() => setScanStatus(null), 5000);
+        }
+    };
 
     const scopeEnabled = activePrimaryTab !== 'openSourceHealth';
 
@@ -247,6 +270,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
                         <SecurityTable 
                             findings={filteredSecurityFindings}
                             onOpenFiles={handleOpenFiles}
+                            onShowPathInfo={handleShowPathInfo}
                             studioPro={studioPro}
                         />
                     )}
@@ -259,13 +283,27 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
                         <MaintainabilityTable 
                             refactoringCandidates={filteredRefactoringCandidates} 
                             onOpenFiles={handleOpenFiles}
+                            onShowPathInfo={handleShowPathInfo}
                             studioPro={studioPro}
                         />
                     )}
                 </>
             )}
 
+            {scanStatus && (
+                <div className={`status-message ${scanStatus.type}`}>
+                    {scanStatus.message}
+                </div>
+            )}
+
             <div className="reload-button-row">
+                <button
+                    className="reload-button"
+                    onClick={handleRequestScan}
+                    disabled={isLoading}
+                >
+                    New scan request
+                </button>
                 <button
                     className="reload-button"
                     onClick={() => loadAllData({ requireSettings: true })}
@@ -280,6 +318,12 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
                     files={dialogFiles} 
                     onSelect={handleDialogSelect} 
                     onClose={handleDialogClose} 
+                />
+            )}
+            {pathInfoFiles && (
+                <PathInfoDialog
+                    paths={pathInfoFiles}
+                    onClose={() => setPathInfoFiles(null)}
                 />
             )}
         </div>

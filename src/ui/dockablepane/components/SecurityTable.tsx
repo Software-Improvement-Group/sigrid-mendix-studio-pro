@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import type { SecurityFinding } from "../../../store/sigridStore";
 import { getStudioProApi } from "@mendix/extensions-api";
 import { getClickableIds } from "../utils/fileNavigation";
+import { formatStatus } from "../utils/pathUtils";
 
 type SecurityTableProps = {
     findings: SecurityFinding[];
     onOpenFiles?: (files: string[]) => void;
+    onShowPathInfo?: (files: string[]) => void;
     studioPro: ReturnType<typeof getStudioProApi>;
 };
 
@@ -14,11 +16,11 @@ export const SEVERITY_SYMBOLS: Record<string, string> = {
     "HIGH" : "🔴",
     "MEDIUM" : "🟠",
     "LOW" : "🟡",
+    "UNKNOWN" : "⚪️",
+    "" : "⚪️",
     "NONE" : "🟢",
     "INFO" : "🔵",
-    "INFORMATION" : "🔵",
-    "UNKNOWN" : "⚪️",
-    "" : "⚪️"
+    "INFORMATION" : "🔵"
 };
 
 export const getRiskSymbol = (severity: string | undefined) => {
@@ -33,12 +35,9 @@ const sortFindings = (findings: SecurityFinding[]) => {
     return sorted;
 };
 
-const formatStatus = (status: string) => {
-    return status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
-};
-
-export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFiles, studioPro }) => {
+export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFiles, onShowPathInfo, studioPro }) => {
     const [clickableIds, setClickableIds] = useState<Set<string>>(new Set());
+
     useEffect(() => {
         const checkClickability = async () => {
             const clickable = await getClickableIds(
@@ -48,14 +47,21 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
             );
             setClickableIds(clickable);
         };
+
         void checkClickability();
     }, [findings, studioPro]);
     
-    const handleDoubleClick = (finding: SecurityFinding) => {
-        if (!onOpenFiles || !clickableIds.has(finding.id)) return;
-
+    const handleLocationClick = (finding: SecurityFinding) => {
+        const isClickable = clickableIds.has(finding.id);
         const file = finding.filePath;
-        if (file) {
+        if (!file) return;
+
+        if (!isClickable) {
+            onShowPathInfo?.([file]);
+            return;
+        }
+
+        if (onOpenFiles) {
             onOpenFiles([file]);
         }
     };
@@ -74,15 +80,23 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
                 {findings.length > 0 ? (
                     sortFindings(findings).map((finding) => {
                         const isClickable = clickableIds.has(finding.id);
+                        const tooltip = isClickable 
+                            ? (finding.filePath ?? "") 
+                            : "Click to view full file path";
+
                         return (
                             <tr 
                                 key={finding.id}
-                                onDoubleClick={() => handleDoubleClick(finding)}
-                                title={isClickable ? "Double-click to open file" : ""}
                                 className={isClickable ? "clickable-row" : ""}
                             >
                                 <td>{getRiskSymbol(finding.severity)}</td>
-                                <td className="clickable-location">{finding.displayFilePath ?? finding.filePath ?? ""}</td>
+                                <td 
+                                    className="clickable-location"
+                                    onClick={() => handleLocationClick(finding)}
+                                    title={tooltip}
+                                >
+                                    {finding.displayFilePath ?? finding.filePath ?? ""}
+                                </td>
                                 <td>{finding.name}</td>
                                 <td>{formatStatus(finding.status)}</td>
                             </tr>
@@ -95,3 +109,4 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
         </table>
     );
 };
+

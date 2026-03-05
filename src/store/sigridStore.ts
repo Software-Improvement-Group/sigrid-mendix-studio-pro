@@ -264,28 +264,32 @@ const readJsonFromStorage = <T>(
     }
 };
 
+let customerPingSent = false;
+
+const sendCustomerPing = (customerName: string): void => {
+    if (customerPingSent || !customerName) return;
+    customerPingSent = true;
+    const url = `https://sigrid-says.com/usage/matomo.php?idsite=5&rec=1&ca=1&e_c=mendixstudiopro&e_a=${encodeURIComponent(customerName)}`;
+    fetch(url, { mode: "no-cors" }).catch(() => {});
+};
+
 const createFetchClient = (settings: SigridSettings) =>
     async <T,>(endpoint: string): Promise<T | null> => {
         const url = `${SIGRID_API_BASE}/${endpoint}`;
 
-        try {
-            const response = await fetch(url, {
-                mode: "cors",
-                credentials: "omit",
-                headers: {
-                    Authorization: `Bearer ${settings.token}`,
-                },
-            });
+        const response = await fetch(url, {
+            mode: "cors",
+            credentials: "omit",
+            headers: {
+                Authorization: `Bearer ${settings.token}`,
+            },
+        });
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            return await response.json();
-        // TODO: add better error handling here
-        } catch (error: any) {
-            throw error;
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+
+        return await response.json();
     };
 
 const RISK_PRIORITY = ["critical", "high", "medium", "low", "none"] as const;
@@ -630,6 +634,27 @@ const deserializeRefactoringCandidates = (raw: unknown): RefactoringCandidatesMa
     return parsed;
 };
 
+const safeWriteToStorage = (
+    securityFindings: SecurityFinding[],
+    oshDependencies: OshDependency[],
+    oshMetadata: OshMetadata | null,
+    refactoringCandidates: RefactoringCandidatesMap,
+    analysisDate: string,
+): void => {
+    try {
+        localStorage.setItem(SECURITY_FINDINGS_KEY, JSON.stringify(securityFindings));
+        localStorage.setItem(OSH_DEPENDENCIES_KEY, JSON.stringify(oshDependencies));
+        if (oshMetadata) {
+            localStorage.setItem(OSH_METADATA_KEY, JSON.stringify(oshMetadata));
+        } else {
+            localStorage.removeItem(OSH_METADATA_KEY);
+        }
+        localStorage.setItem(REFACTORING_CANDIDATES_KEY, JSON.stringify(refactoringCandidates));
+        localStorage.setItem(ANALYSIS_DATE_KEY, analysisDate);
+    } catch {
+    }
+};
+
 const deriveAnalysisDate = (
     securityFindings: SecurityFinding[],
     refactoringCandidates: RefactoringCandidatesMap,
@@ -673,6 +698,7 @@ type SigridState = {
     setSettings: (settings: SigridSettings) => void;
     loadAllData: (options?: { requireSettings?: boolean; settingsOverride?: SigridSettings }) => Promise<void>;
     loadSettingsFromStorage: () => void;
+    requestNewScan: () => Promise<{ success: boolean; message: string }>;
 };
 
 // TODO: refactor so that the hook returns functions separately
@@ -690,6 +716,7 @@ export const useSigridStore = create<SigridState>((set, get) => ({
         localStorage.setItem("sigridToken", settings.token);
         localStorage.setItem("sigridCustomer", settings.customer.toLowerCase());
         localStorage.setItem("sigridSystem", settings.system.toLowerCase());
+        sendCustomerPing(settings.customer.toLowerCase());
         set({
             settings: {
                 token: settings.token,
@@ -720,6 +747,7 @@ export const useSigridStore = create<SigridState>((set, get) => ({
             : derivedAnalysisDate;
 
         if (storedToken && storedCustomer && storedSystem) {
+            sendCustomerPing(storedCustomer.toLowerCase());
             set({
                 settings: {
                     token: storedToken,
@@ -741,6 +769,42 @@ export const useSigridStore = create<SigridState>((set, get) => ({
                 refactoringCandidates: cachedRefactoring,
                 analysisDate: cachedAnalysisDate,
             });
+        }
+    },
+
+    requestNewScan: async () => {
+        const { settings } = get();
+        if (!settings) {
+            return { success: false, message: "Settings not configured" };
+        }
+
+        try {
+            const url = `https://sigrid-says.com/rest/inboundresults/qsm/${settings.customer}/${settings.system}`;
+            const response = await fetch(url, {
+                method: "POST",
+                mode: "cors",
+                credentials: "omit",
+                headers: {
+                    Authorization: `Bearer ${settings.token}`,
+                },
+            });
+
+            if (!response.ok) {
+                return { 
+                    success: false, 
+                    message: `Scan request failed (HTTP ${response.status})` 
+                };
+            }
+
+            return { 
+                success: true, 
+                message: "Scan request submitted successfully. It may take a few minutes for new results to be available. Please reload the data after some time." 
+            };
+        } catch (error: any) {
+            return { 
+                success: false, 
+                message: error?.message ?? String(error)
+            };
         }
     },
 
@@ -778,36 +842,29 @@ export const useSigridStore = create<SigridState>((set, get) => ({
 
             const oshMetadata = mapOshMetadata(sbom?.properties ?? oshData?.properties, oshData?.exportDate ?? sbom?.exportDate);
 
-            const refactoringCandidates = createEmptyRefactoringMap();
-
-            for (const property of REFACTORING_CATEGORIES) {
-                try {
-                    const refactoringData = await fetchJson<any>(
+            const refactoringResults = await Promise.allSettled(
+                REFACTORING_CATEGORIES.map((property) =>
+                    fetchJson<any>(
                         `refactoring-candidates/${effectiveSettings.customer}/${effectiveSettings.system}/${property}`,
-                    );
-                    refactoringCandidates[property] = mapArray<RefactoringCandidate>(
-                        refactoringData?.refactoringCandidates,
-                        (candidate) => mapRefactoringCandidate(candidate, property),
-                    );
-                } catch {
-                    refactoringCandidates[property] = [];
-                }
-            }
+                    ).then((refactoringData) => ({
+                        property,
+                        candidates: mapArray<RefactoringCandidate>(
+                            refactoringData?.refactoringCandidates,
+                            (candidate) => mapRefactoringCandidate(candidate, property),
+                        ),
+                    }))
+                ),
+            );
+
+            const refactoringCandidates = createEmptyRefactoringMap();
+            refactoringResults.forEach((result, index) => {
+                const property = REFACTORING_CATEGORIES[index];
+                refactoringCandidates[property] = result.status === "fulfilled" ? result.value.candidates : [];
+            });
 
             const analysisDate = deriveAnalysisDate(securityFindings, refactoringCandidates, oshMetadata);
 
-            try {
-                localStorage.setItem(SECURITY_FINDINGS_KEY, JSON.stringify(securityFindings));
-                localStorage.setItem(OSH_DEPENDENCIES_KEY, JSON.stringify(oshDependencies));
-                if (oshMetadata) {
-                    localStorage.setItem(OSH_METADATA_KEY, JSON.stringify(oshMetadata));
-                } else {
-                    localStorage.removeItem(OSH_METADATA_KEY);
-                }
-                localStorage.setItem(REFACTORING_CANDIDATES_KEY, JSON.stringify(refactoringCandidates));
-                localStorage.setItem(ANALYSIS_DATE_KEY, analysisDate);
-            } catch {
-            }
+            safeWriteToStorage(securityFindings, oshDependencies, oshMetadata, refactoringCandidates, analysisDate);
             
             set({
                 securityFindings,
