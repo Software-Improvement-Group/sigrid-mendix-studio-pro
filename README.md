@@ -35,27 +35,26 @@ export const studioProVersion = "11.7.0";
 
 // 3. macOS only: The name of your Studio Pro application in /Applications
 // Example: "Studio Pro 11.7.0" or "Studio Pro 11.7.0 Beta"
-export const studioProApp = "Studio Pro 11.7.0"; 
+export const studioProApp = "Studio Pro 11.7.0";
 ```
 
 This configuration is used for both building the extension and launching Studio Pro.
 
-### 3. Build
+### 3. Build and Launch
 
-```bash
-npm run build        # Build once
-npm run build:dev    # Build with watch mode
-```
-
-### 4. Launch Studio Pro
-
-You can now launch Studio Pro directly using the configured path:
+Build the extension and launch Studio Pro:
 
 ```bash
 npm start
 ```
 
-This will automatically find the `.mpr` file in your `appDir` and enable extension development mode.
+This will automatically build the extension, find the `.mpr` file in your `appDir`, and launch Studio Pro with extension development mode enabled.
+
+For development with automatic rebuilds:
+
+```bash
+npm run build:dev    # Build with watch mode
+```
 
 ## Configuration
 
@@ -71,10 +70,11 @@ This will automatically find the `.mpr` file in your `appDir` and enable extensi
 
 1. Locate the **Extensions** menu in Studio Pro's main menu bar.
 2. Select **QSM** > **Show QSM findings**.
-3. View findings in the dockable pane:
+3. View Maintainability, Security and Open Source Health findings in the dockable pane:
    - **Scope Selector**: Filter findings between the **Entire system** or the **Selected file** currently open in Studio Pro.
-   - **Navigation**: **Double-click** any blue finding to automatically open and focus the corresponding document in the Studio Pro editor. Non-clickable findings are displayed in standard black text.
+   - **Navigation**: **Click** any blue finding to automatically open and focus the corresponding document in the Studio Pro editor. Findings shown in standard black text are not navigable, but you can still click them to view the full file path.
 4. Use the **Reload data** button to refresh findings from Sigrid.
+5. Use the **New scan request** button to trigger an on-demand QSM scan for the system.
 
 ## License
 

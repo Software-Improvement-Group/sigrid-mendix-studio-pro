@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import {RefactoringCandidate, RefactoringCandidatesMap, RefactoringCategory} from "../../../store/sigridStore";
-import { toDisplayPath } from "../utils/pathUtils";
+import { toDisplayPath, formatStatus } from "../utils/pathUtils";
 import { getStudioProApi } from "@mendix/extensions-api";
 import { getClickableIds } from "../utils/fileNavigation";
 
 type MaintainabilityTableProps = {
     refactoringCandidates: RefactoringCandidatesMap;
     onOpenFiles?: (files: string[]) => void;
+    onShowPathInfo?: (files: string[]) => void;
     studioPro: ReturnType<typeof getStudioProApi>;
 };
 
@@ -43,10 +44,6 @@ const sortRefactoringCandidates = (refactoringCandidates: RefactoringCandidatesM
     return sorted;
 };
 
-const formatStatus = (status: string) => {
-    return status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
-};
-
 const formatDescription = (rc: RefactoringCandidate) => {
     const location: string = formatLocation(rc);
     const unit: string = ["mendix", "mendixflow"].indexOf(rc.technology ?? "") === -1 ? "Flow" : "Unit";
@@ -79,7 +76,17 @@ const formatLocation = (rc: RefactoringCandidate) => {
     }
 };
 
-export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refactoringCandidates, onOpenFiles, studioPro }) => {
+const getFilePaths = (rc: RefactoringCandidate): string[] => {
+    if (rc.locations.length > 0) {
+        return rc.locations.map(loc => loc.file).filter(Boolean);
+    }
+    if (rc.file) {
+        return [rc.file];
+    }
+    return [];
+};
+
+export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refactoringCandidates, onOpenFiles, onShowPathInfo, studioPro }) => {
     const [clickableIds, setClickableIds] = useState<Set<string>>(new Set());
 
     const sortedCandidates = sortRefactoringCandidates(refactoringCandidates);
@@ -88,31 +95,25 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
             const clickable = await getClickableIds(
                 studioPro, 
                 sortedCandidates, 
-                (rc) => {
-                    if (rc.locations.length > 0) {
-                        return rc.locations.map(loc => loc.file).filter(Boolean);
-                    } else if (rc.file) {
-                        return [rc.file];
-                    }
-                    return [];
-                }
+                getFilePaths
             );
             setClickableIds(clickable);
         };
         void checkClickability();
     }, [refactoringCandidates, studioPro]);
     
-    const handleRowDoubleClick = (rc: RefactoringCandidate) => {
-        if (!onOpenFiles || !clickableIds.has(rc.id)) return
-        
-        let files: string[] = [];
-        if (rc.locations.length > 0) {
-            files = rc.locations.map(loc => loc.file).filter(Boolean);
-        } else if (rc.file) {
-            files = [rc.file];
+    const handleLocationClick = (rc: RefactoringCandidate) => {
+        const isClickable = clickableIds.has(rc.id);
+        const files = getFilePaths(rc);
+
+        if (files.length === 0) return;
+
+        if (!isClickable) {
+            onShowPathInfo?.(files);
+            return;
         }
 
-        if (files.length > 0) {
+        if (onOpenFiles) {
             onOpenFiles(files);
         }
     };
@@ -131,15 +132,28 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
             {sortedCandidates.length > 0 ? (
                 sortedCandidates.map((rc) => {
                     const isClickable = clickableIds.has(rc.id);
+                    const files = getFilePaths(rc);
+                    
+                    let tooltip = "";
+                    if (files.length > 1) {
+                        tooltip = isClickable ? "Click to view all locations" : "Click to view full file paths";
+                    } else if (files.length === 1) {
+                        tooltip = isClickable ? files[0] : "Click to view full file path";
+                    }
+
                     return (
                         <tr 
                             key={rc.id} 
-                            onDoubleClick={() => handleRowDoubleClick(rc)}
-                            title={isClickable ? "Double-click to open file(s)" : ""}
                             className={isClickable ? "clickable-row" : ""}
                         >
                             <td>{getRiskSymbol(rc.severity)}</td>
-                            <td className="clickable-location">{formatLocation(rc)}</td>
+                            <td 
+                                className="clickable-location"
+                                onClick={() => handleLocationClick(rc)}
+                                title={tooltip}
+                            >
+                                {formatLocation(rc)}
+                            </td>
                             <td>{formatDescription(rc)}</td>
                             <td>{formatStatus(rc.status)}</td>
                         </tr>
