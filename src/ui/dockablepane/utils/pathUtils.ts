@@ -48,3 +48,31 @@ const STATUS_LABELS: Record<string, string> = {
 export function formatStatus(status: string): string {
     return STATUS_LABELS[status] ?? status;
 }
+
+export const SEVERITY_SYMBOLS: Record<string, string> = {
+    "CRITICAL" : "🟣",
+    "HIGH" : "🔴",
+    "MEDIUM" : "🟠",
+    "LOW" : "🟡",
+    "UNKNOWN" : "⚪️",
+    "" : "⚪️",
+    "NONE" : "🟢",
+    "INFO" : "🔵",
+    "INFORMATION" : "🔵"
+};
+
+export const getSecurityRiskSymbol = (severity: string | undefined): string => {
+    return SEVERITY_SYMBOLS[severity || ""] ?? "⚪️";
+};
+
+const RISK_CATEGORY_SYMBOLS: Record<string, string> = {
+    "VERY_HIGH" : "🔴",
+    "HIGH" : "🟠",
+    "MODERATE" : "🟡",
+    "MEDIUM" : "🟡",
+    "LOW" : "🟢"
+};
+
+export const getMaintainabilityRiskSymbol = (severity: string): string => {
+    return RISK_CATEGORY_SYMBOLS[severity] ?? "⚪️";
+};

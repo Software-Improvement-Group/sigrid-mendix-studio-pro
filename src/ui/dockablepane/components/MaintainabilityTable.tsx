@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {RefactoringCandidate, RefactoringCandidatesMap, RefactoringCategory, FindingStatus, MAINTAINABILITY_STATUSES} from "../../../store/sigridStore";
-import { toDisplayPath, formatStatus } from "../utils/pathUtils";
+import { toDisplayPath, formatStatus, getMaintainabilityRiskSymbol } from "../utils/pathUtils";
 import { getStudioProApi } from "@mendix/extensions-api";
 import { getClickableIds } from "../utils/fileNavigation";
 import { FindingEditDialog } from "./FindingEditDialog";
@@ -12,20 +12,10 @@ type MaintainabilityTableProps = {
     studioPro: ReturnType<typeof getStudioProApi>;
 };
 
-const RISK_CATEGORY_SYMBOLS: Record<string, string> = {
-    "VERY_HIGH" : "🔴",
-    "HIGH" : "🟠",
-    "MODERATE" : "🟡",
-    "MEDIUM" : "🟡",
-    "LOW" : "🟢"
-};
-
-const getRiskSymbol = (severity: string) => {
-    return RISK_CATEGORY_SYMBOLS[severity] ?? "⚪️";
-};
+const RISK_CATEGORY_ORDER = ["VERY_HIGH", "HIGH", "MODERATE", "MEDIUM", "LOW"];
 
 const sortRefactoringCandidates = (refactoringCandidates: RefactoringCandidatesMap) => {
-    const severityNames: string[] = Object.keys(RISK_CATEGORY_SYMBOLS);
+    const severityNames = RISK_CATEGORY_ORDER;
 
     let sorted: RefactoringCandidate[] = [];
     for (let category in refactoringCandidates) {
@@ -127,6 +117,7 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
             <tr>
                 <th>Risk</th>
                 <th>Location</th>
+                <th></th>
                 <th>Description</th>
                 <th>Status</th>
                 <th></th>
@@ -136,33 +127,25 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
             {sortedCandidates.length > 0 ? (
                 sortedCandidates.map((rc) => {
                     const isClickable = clickableIds.has(rc.id);
-                    const files = getFilePaths(rc);
-                    
-                    let tooltip = "";
-                    if (files.length > 1) {
-                        tooltip = isClickable ? "Click to view all locations" : "Click to view full file paths";
-                    } else if (files.length === 1) {
-                        tooltip = isClickable ? files[0] : "Click to view full file path";
-                    }
 
                     return (
-                        <tr 
-                            key={rc.id} 
-                            className={isClickable ? "clickable-row" : ""}
-                        >
-                            <td>{getRiskSymbol(rc.severity)}</td>
-                            <td 
-                                className="clickable-location"
-                                onClick={() => handleLocationClick(rc)}
-                                title={tooltip}
-                            >
-                                {formatLocation(rc)}
+                        <tr key={rc.id}>
+                            <td>{getMaintainabilityRiskSymbol(rc.severity)}</td>
+                            <td>{formatLocation(rc)}</td>
+                            <td>
+                                {getFilePaths(rc).length > 0 && (
+                                    <button
+                                        className="icon-button"
+                                        title={isClickable ? "Open in editor" : "View full file paths"}
+                                        onClick={() => handleLocationClick(rc)}
+                                    >{isClickable ? "📂" : "📋"}</button>
+                                )}
                             </td>
                             <td>{formatDescription(rc)}</td>
                             <td className="status-cell">{formatStatus(rc.status)}</td>
                             <td>
                                 <button
-                                    className="edit-icon-button"
+                                    className="icon-button"
                                     title="Edit finding"
                                     onClick={() => setEditingCandidate(rc)}
                                 >✏️</button>
@@ -171,7 +154,7 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
                     );
                 })
             ) : (
-                <tr><td colSpan={5}>No refactoring candidates found</td></tr>
+                <tr><td colSpan={6}>No refactoring candidates found</td></tr>
             )}
             </tbody>
         </table>

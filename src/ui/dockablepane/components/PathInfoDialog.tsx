@@ -8,13 +8,13 @@ type PathInfoDialogProps = {
 export const PathInfoDialog: React.FC<PathInfoDialogProps> = ({ paths, onClose }) => {
     return (
         <div className="file-selection-overlay" onClick={onClose}>
-            <div className="file-selection-dialog" onClick={(e) => e.stopPropagation()}>
-                <h3>Full File Path</h3>
-                {paths.map((path, index) => (
-                    <div key={index} className="path-info-content">
-                        {path}
-                    </div>
-                ))}
+            <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
+                <h3>📋 Full file path</h3>
+                <ul className="file-selection-list">
+                    {paths.map((path, index) => (
+                        <li key={index}>{path}</li>
+                    ))}
+                </ul>
                 <div className="file-selection-actions">
                     <button onClick={onClose}>Close</button>
                 </div>

@@ -1,6 +1,6 @@
 import React from "react";
 import type {OshDependency} from "../../../store/sigridStore";
-import {getRiskSymbol, SEVERITY_SYMBOLS} from "./SecurityTable";
+import {getSecurityRiskSymbol, SEVERITY_SYMBOLS} from "../utils/pathUtils";
 
 type OpenSourceHealthTableProps = {
     dependencies: OshDependency[];
@@ -43,14 +43,14 @@ export const OpenSourceHealthTable: React.FC<OpenSourceHealthTableProps> = ({ de
             {dependencies.length > 0 ? (
                 sortDependencies(dependencies).map((dependency, index) => (
                     <tr key={`${dependency.name}-${index}`}>
-                        <td>{getRiskSymbol(dependency.risk)}</td>
+                        <td>{getSecurityRiskSymbol(dependency.risk)}</td>
                         <td>{dependency.name}</td>
                         <td>{dependency.version}</td>
                         <td>{formatTransitive(dependency.dependencyType)}</td>
-                        <td>{getRiskSymbol(dependency.vulnerabilityRisk)}</td>
-                        <td>{getRiskSymbol(dependency.licenseRisk)}</td>
-                        <td>{getRiskSymbol(dependency.freshnessRisk)}</td>
-                        <td>{getRiskSymbol(dependency.activityRisk)}</td>
+                        <td>{getSecurityRiskSymbol(dependency.vulnerabilityRisk)}</td>
+                        <td>{getSecurityRiskSymbol(dependency.licenseRisk)}</td>
+                        <td>{getSecurityRiskSymbol(dependency.freshnessRisk)}</td>
+                        <td>{getSecurityRiskSymbol(dependency.activityRisk)}</td>
                     </tr>
                 ))
             ) : (

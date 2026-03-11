@@ -66,32 +66,6 @@ body {
     background-color: #156ff4;
 }
 
-.maintainability-tabs {
-    display: flex;
-    gap: 12px;
-    border-bottom: 1px solid #e0e3e8;
-    padding: 0 0 6px;
-    margin: 10px 0;
-    overflow-x: auto;
-}
-
-.maintainability-tab {
-    padding: 6px 0;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    color: #70757a;
-    border-bottom: 2px solid transparent;
-    transition: color 0.2s ease, border-color 0.2s ease;
-}
-
-.maintainability-tab.active {
-    color: #0b57d0;
-    border-bottom-color: #0b57d0;
-}
-
 .sigrid-table {
     width: 100%;
     font-size: 13px;
@@ -321,15 +295,18 @@ body {
     color: #4f5b66;
 }
 
-.clickable-location {
-    color: inherit;
-    text-decoration: none;
+.icon-button {
+    background: none;
+    border: none;
     cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
 }
 
-.clickable-row .clickable-location {
-    color: #0b57d0;
-    text-decoration: underline;
+.icon-button:hover {
+    opacity: 1;
 }
 
 .description-cell {
@@ -356,22 +333,8 @@ body {
     z-index: 1000;
 }
 
-.file-selection-dialog {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 24px;
-    width: 600px; /* Increased from 400px */
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-}
-
-.file-selection-dialog h3 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 18px;
-    font-weight: 600;
+.file-selection-actions button:hover {
+    background-color: #e0e0e0;
 }
 
 .file-selection-list {
@@ -399,11 +362,9 @@ body {
 
 .file-selection-list li:hover {
     background-color: #f0f7ff;
-    color: #0b57d0;
 }
 
 .file-selection-actions {
-    margin-top: 20px;
     display: flex;
     justify-content: flex-end;
 }
@@ -422,55 +383,32 @@ body {
     background-color: #e0e0e0;
 }
 
-.path-info-content {
-    padding: 16px;
-    background-color: #f4f7fb;
-    border: 1px solid #e0e6ef;
-    border-radius: 6px;
-    font-size: 13px;
-    word-break: break-all;
-    color: #2f2f33;
-}
-
-.edit-icon-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 2px 4px;
-    opacity: 0.5;
-    transition: opacity 0.15s ease;
-}
-
-.edit-icon-button:hover {
-    opacity: 1;
-}
-
 .status-cell {
     white-space: nowrap;
 }
 
-.finding-edit-dialog {
+.dialog-box {
     background-color: #ffffff;
     border-radius: 10px;
     padding: 16px;
     width: 380px;
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
     gap: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
+.dialog-box h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
 .finding-edit-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
-.finding-edit-header h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
 }
 
 .finding-edit-close {

@@ -3,7 +3,7 @@ import type { SecurityFinding, FindingStatus } from "../../../store/sigridStore"
 import { SECURITY_STATUSES } from "../../../store/sigridStore";
 import { getStudioProApi } from "@mendix/extensions-api";
 import { getClickableIds } from "../utils/fileNavigation";
-import { formatStatus } from "../utils/pathUtils";
+import { formatStatus, getSecurityRiskSymbol, SEVERITY_SYMBOLS } from "../utils/pathUtils";
 import { FindingEditDialog } from "./FindingEditDialog";
 
 type SecurityTableProps = {
@@ -11,22 +11,6 @@ type SecurityTableProps = {
     onOpenFiles?: (files: string[]) => void;
     onShowPathInfo?: (files: string[]) => void;
     studioPro: ReturnType<typeof getStudioProApi>;
-};
-
-export const SEVERITY_SYMBOLS: Record<string, string> = {
-    "CRITICAL" : "🟣",
-    "HIGH" : "🔴",
-    "MEDIUM" : "🟠",
-    "LOW" : "🟡",
-    "UNKNOWN" : "⚪️",
-    "" : "⚪️",
-    "NONE" : "🟢",
-    "INFO" : "🔵",
-    "INFORMATION" : "🔵"
-};
-
-export const getRiskSymbol = (severity: string | undefined) => {
-    return SEVERITY_SYMBOLS[severity || ""] ?? "⚪️";
 };
 
 const sortFindings = (findings: SecurityFinding[]) => {
@@ -78,6 +62,7 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
                 <tr>
                     <th>Risk</th>
                     <th>Location</th>
+                    <th></th>
                     <th>Description</th>
                     <th>Status</th>
                     <th></th>
@@ -87,28 +72,25 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
                 {sortedFindings.length > 0 ? (
                     sortedFindings.map((finding) => {
                         const isClickable = clickableIds.has(finding.id);
-                        const tooltip = isClickable 
-                            ? (finding.filePath ?? "") 
-                            : "Click to view full file path";
 
                         return (
-                            <tr 
-                                key={finding.id}
-                                className={isClickable ? "clickable-row" : ""}
-                            >
-                                <td>{getRiskSymbol(finding.severity)}</td>
-                                <td 
-                                    className="clickable-location"
-                                    onClick={() => handleLocationClick(finding)}
-                                    title={tooltip}
-                                >
-                                    {finding.displayFilePath ?? finding.filePath ?? ""}
+                            <tr key={finding.id}>
+                                <td>{getSecurityRiskSymbol(finding.severity)}</td>
+                                <td>{finding.displayFilePath ?? finding.filePath ?? ""}</td>
+                                <td>
+                                    {finding.filePath && (
+                                        <button
+                                            className="icon-button"
+                                            title={isClickable ? "Open in editor" : "View full file path"}
+                                            onClick={() => handleLocationClick(finding)}
+                                        >{isClickable ? "📂" : "📋"}</button>
+                                    )}
                                 </td>
                                 <td>{finding.name}</td>
                                 <td className="status-cell">{formatStatus(finding.status)}</td>
                                 <td>
                                     <button
-                                        className="edit-icon-button"
+                                        className="icon-button"
                                         title="Edit finding"
                                         onClick={() => setEditingFinding(finding)}
                                     >✏️</button>
@@ -117,7 +99,7 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
                         );
                     })
                 ) : (
-                    <tr><td colSpan={5}>No security findings found</td></tr>
+                    <tr><td colSpan={6}>No security findings found</td></tr>
                 )}
             </tbody>
         </table>

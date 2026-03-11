@@ -30,7 +30,7 @@ export const FindingEditDialog: React.FC<FindingEditDialogProps> = ({ findingTyp
 
     return (
         <div className="file-selection-overlay" onClick={onClose}>
-            <div className="finding-edit-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
                 <div className="finding-edit-header">
                     <h3>✏️ Edit finding</h3>
                     <button className="finding-edit-close" onClick={onClose}>✕</button>
