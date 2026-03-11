@@ -36,6 +36,15 @@ export function stripMendixExtensions(path: string | null | undefined): string {
         .replace(/\.mendix/i, "");
 }
 
+const STATUS_LABELS: Record<string, string> = {
+    RAW: "❓ Raw",
+    REFINED: "🔍 Refined",
+    WILL_FIX: "🔧 Will Fix",
+    FIXED: "✅ Fixed",
+    ACCEPTED: "😑 Risk Accepted",
+    FALSE_POSITIVE: "🚫 False Positive",
+};
+
 export function formatStatus(status: string): string {
-    return status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
+    return STATUS_LABELS[status] ?? status;
 }

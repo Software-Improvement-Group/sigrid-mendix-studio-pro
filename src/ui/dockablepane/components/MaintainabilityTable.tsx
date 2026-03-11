@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {RefactoringCandidate, RefactoringCandidatesMap, RefactoringCategory} from "../../../store/sigridStore";
+import {RefactoringCandidate, RefactoringCandidatesMap, RefactoringCategory, FindingStatus, MAINTAINABILITY_STATUSES} from "../../../store/sigridStore";
 import { toDisplayPath, formatStatus } from "../utils/pathUtils";
 import { getStudioProApi } from "@mendix/extensions-api";
 import { getClickableIds } from "../utils/fileNavigation";
+import { FindingEditDialog } from "./FindingEditDialog";
 
 type MaintainabilityTableProps = {
     refactoringCandidates: RefactoringCandidatesMap;
@@ -88,6 +89,7 @@ const getFilePaths = (rc: RefactoringCandidate): string[] => {
 
 export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refactoringCandidates, onOpenFiles, onShowPathInfo, studioPro }) => {
     const [clickableIds, setClickableIds] = useState<Set<string>>(new Set());
+    const [editingCandidate, setEditingCandidate] = useState<RefactoringCandidate | null>(null);
 
     const sortedCandidates = sortRefactoringCandidates(refactoringCandidates);
     useEffect(() => {
@@ -119,6 +121,7 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
     };
 
     return (
+    <>
         <table id="sigridFindings" className="sigrid-table">
             <thead>
             <tr>
@@ -126,6 +129,7 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
                 <th>Location</th>
                 <th>Description</th>
                 <th>Status</th>
+                <th></th>
             </tr>
             </thead>
             <tbody>
@@ -155,14 +159,32 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
                                 {formatLocation(rc)}
                             </td>
                             <td>{formatDescription(rc)}</td>
-                            <td>{formatStatus(rc.status)}</td>
+                            <td className="status-cell">{formatStatus(rc.status)}</td>
+                            <td>
+                                <button
+                                    className="edit-icon-button"
+                                    title="Edit finding"
+                                    onClick={() => setEditingCandidate(rc)}
+                                >✏️</button>
+                            </td>
                         </tr>
                     );
                 })
             ) : (
-                <tr><td colSpan={4}>No refactoring candidates found</td></tr>
+                <tr><td colSpan={5}>No refactoring candidates found</td></tr>
             )}
             </tbody>
         </table>
+        {editingCandidate && (
+            <FindingEditDialog
+                findingType="maintainability"
+                findingId={editingCandidate.id}
+                currentStatus={editingCandidate.status as FindingStatus}
+                currentRemark={editingCandidate.remark}
+                statuses={MAINTAINABILITY_STATUSES}
+                onClose={() => setEditingCandidate(null)}
+            />
+        )}
+    </>
     );
 };

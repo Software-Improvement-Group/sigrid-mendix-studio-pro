@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import type { SecurityFinding } from "../../../store/sigridStore";
+import type { SecurityFinding, FindingStatus } from "../../../store/sigridStore";
+import { SECURITY_STATUSES } from "../../../store/sigridStore";
 import { getStudioProApi } from "@mendix/extensions-api";
 import { getClickableIds } from "../utils/fileNavigation";
 import { formatStatus } from "../utils/pathUtils";
+import { FindingEditDialog } from "./FindingEditDialog";
 
 type SecurityTableProps = {
     findings: SecurityFinding[];
@@ -37,6 +39,7 @@ const sortFindings = (findings: SecurityFinding[]) => {
 
 export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFiles, onShowPathInfo, studioPro }) => {
     const [clickableIds, setClickableIds] = useState<Set<string>>(new Set());
+    const [editingFinding, setEditingFinding] = useState<SecurityFinding | null>(null);
 
     useEffect(() => {
         const checkClickability = async () => {
@@ -66,7 +69,10 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
         }
     };
 
+    const sortedFindings = sortFindings(findings);
+
     return (
+    <>
         <table id="sigridFindings" className="sigrid-table">
             <thead>
                 <tr>
@@ -74,11 +80,12 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
                     <th>Location</th>
                     <th>Description</th>
                     <th>Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
-                {findings.length > 0 ? (
-                    sortFindings(findings).map((finding) => {
+                {sortedFindings.length > 0 ? (
+                    sortedFindings.map((finding) => {
                         const isClickable = clickableIds.has(finding.id);
                         const tooltip = isClickable 
                             ? (finding.filePath ?? "") 
@@ -98,15 +105,33 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
                                     {finding.displayFilePath ?? finding.filePath ?? ""}
                                 </td>
                                 <td>{finding.name}</td>
-                                <td>{formatStatus(finding.status)}</td>
+                                <td className="status-cell">{formatStatus(finding.status)}</td>
+                                <td>
+                                    <button
+                                        className="edit-icon-button"
+                                        title="Edit finding"
+                                        onClick={() => setEditingFinding(finding)}
+                                    >✏️</button>
+                                </td>
                             </tr>
                         );
                     })
                 ) : (
-                    <tr><td colSpan={4}>No security findings found</td></tr>
+                    <tr><td colSpan={5}>No security findings found</td></tr>
                 )}
             </tbody>
         </table>
+        {editingFinding && (
+            <FindingEditDialog
+                findingType="security"
+                findingId={editingFinding.id}
+                currentStatus={editingFinding.status as FindingStatus}
+                currentRemark={editingFinding.remark}
+                statuses={SECURITY_STATUSES}
+                onClose={() => setEditingFinding(null)}
+            />
+        )}
+    </>
     );
 };
 
