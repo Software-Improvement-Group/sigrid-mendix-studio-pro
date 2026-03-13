@@ -36,6 +36,43 @@ export function stripMendixExtensions(path: string | null | undefined): string {
         .replace(/\.mendix/i, "");
 }
 
+const STATUS_LABELS: Record<string, string> = {
+    RAW: "❓ Raw",
+    REFINED: "🔍 Refined",
+    WILL_FIX: "🔧 Will Fix",
+    FIXED: "✅ Fixed",
+    ACCEPTED: "😑 Risk Accepted",
+    FALSE_POSITIVE: "🚫 False Positive",
+};
+
 export function formatStatus(status: string): string {
-    return status.substring(0, 1).toUpperCase() + status.substring(1).toLowerCase();
+    return STATUS_LABELS[status] ?? status;
 }
+
+export const SEVERITY_SYMBOLS: Record<string, string> = {
+    "CRITICAL" : "🟣",
+    "HIGH" : "🔴",
+    "MEDIUM" : "🟠",
+    "LOW" : "🟡",
+    "UNKNOWN" : "⚪️",
+    "" : "⚪️",
+    "NONE" : "🟢",
+    "INFO" : "🔵",
+    "INFORMATION" : "🔵"
+};
+
+export const getSecurityRiskSymbol = (severity: string | undefined): string => {
+    return SEVERITY_SYMBOLS[severity || ""] ?? "⚪️";
+};
+
+const RISK_CATEGORY_SYMBOLS: Record<string, string> = {
+    "VERY_HIGH" : "🔴",
+    "HIGH" : "🟠",
+    "MODERATE" : "🟡",
+    "MEDIUM" : "🟡",
+    "LOW" : "🟢"
+};
+
+export const getMaintainabilityRiskSymbol = (severity: string): string => {
+    return RISK_CATEGORY_SYMBOLS[severity] ?? "⚪️";
+};

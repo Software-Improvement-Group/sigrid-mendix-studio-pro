@@ -34,6 +34,7 @@ export type SecurityFinding = {
     component?: string;
     technology?: string;
     reviewStatus?: string;
+    remark?: string;
     references: SecurityFindingReference[];
 };
 
@@ -140,6 +141,7 @@ export type RefactoringCandidate = {
     valueScore?: number;
     description?: string;
     rationale?: string;
+    remark?: string;
     locations: RefactoringCandidateLocation[];
 };
 
@@ -148,6 +150,13 @@ export type SigridSettings = {
     customer: string;
     system: string;
 };
+
+export type FindingStatus = "RAW" | "REFINED" | "WILL_FIX" | "FIXED" | "ACCEPTED" | "FALSE_POSITIVE";
+
+export const MAINTAINABILITY_STATUSES: FindingStatus[] = ["RAW", "WILL_FIX", "ACCEPTED"];
+export const SECURITY_STATUSES: FindingStatus[] = ["RAW", "REFINED", "WILL_FIX", "FIXED", "ACCEPTED", "FALSE_POSITIVE"];
+
+export type FindingType = "security" | "maintainability";
 
 export type RefactoringCandidatesMap = Record<RefactoringCategory, RefactoringCandidate[]>;
 
@@ -407,7 +416,7 @@ const mapSecurityFinding = (input: unknown): SecurityFinding | null => {
         id,
         name: title,
         type,
-        status: asStringOrDefault(data.status, "UNKNOWN"),
+        status: asStringOrDefault(data.status, "RAW"),
         severity: asString(data.severity),
         model: asString(data.model),
         category: asString(data.category) ?? asString(data.top10Category),
@@ -422,6 +431,7 @@ const mapSecurityFinding = (input: unknown): SecurityFinding | null => {
         component: asString(data.component),
         technology: asString(data.technology),
         reviewStatus: asString(data.reviewStatus),
+        remark: asString(data.remark),
         references,
     };
 };
@@ -563,7 +573,7 @@ const mapRefactoringCandidate = (input: unknown, category: RefactoringCategory):
         category,
         summary: asString(data.summary) ?? asString(data.title) ?? id,
         severity: asStringOrDefault(data.severity, "UNKNOWN"),
-        status: asStringOrDefault(data.status, "UNKNOWN"),
+        status: asStringOrDefault(data.status, "RAW"),
         technology,
         snapshotDate: asString(data.snapshotDate) ?? "",
         sameComponent,
@@ -585,6 +595,7 @@ const mapRefactoringCandidate = (input: unknown, category: RefactoringCategory):
         valueScore: asNumber(data.valueScore ?? data.value ?? data.score),
         description: asString(data.description) ?? asString(data.message),
         rationale: asString(data.rationale) ?? asString(data.reason),
+        remark: asString(data.remark),
         locations,
     };
 };
@@ -699,6 +710,7 @@ type SigridState = {
     loadAllData: (options?: { requireSettings?: boolean; settingsOverride?: SigridSettings }) => Promise<void>;
     loadSettingsFromStorage: () => void;
     requestNewScan: () => Promise<{ success: boolean; message: string }>;
+    updateFindingStatus: (findingType: FindingType, findingId: string, newStatus: FindingStatus, remark?: string) => Promise<{ success: boolean; message: string }>;
 };
 
 // TODO: refactor so that the hook returns functions separately
@@ -805,6 +817,70 @@ export const useSigridStore = create<SigridState>((set, get) => ({
                 success: false, 
                 message: error?.message ?? String(error)
             };
+        }
+    },
+
+    updateFindingStatus: async (findingType: FindingType, findingId: string, newStatus: FindingStatus, remark?: string) => {
+        const { settings } = get();
+        if (!settings) {
+            return { success: false, message: "Settings not configured" };
+        }
+
+        const previousState = get();
+        const patch = { status: newStatus, ...(remark !== undefined && { remark }) };
+        const rollback = () => {
+            if (findingType === "security") {
+                set({ securityFindings: previousState.securityFindings });
+            } else {
+                set({ refactoringCandidates: previousState.refactoringCandidates });
+            }
+        };
+
+        if (findingType === "security") {
+            set({
+                securityFindings: previousState.securityFindings.map((f) =>
+                    f.id === findingId ? { ...f, ...patch } : f
+                ),
+            });
+        } else {
+            const updated = { ...previousState.refactoringCandidates };
+            for (const category of REFACTORING_CATEGORIES) {
+                updated[category] = updated[category].map((c) =>
+                    c.id === findingId ? { ...c, ...patch } : c
+                );
+            }
+            set({ refactoringCandidates: updated });
+        }
+        try {
+            const url = `${SIGRID_API_BASE}/findings/${settings.customer}/${settings.system}/${findingId}`;
+            const response = await fetch(url, {
+                method: "PATCH",
+                mode: "cors",
+                credentials: "omit",
+                headers: {
+                    Authorization: `Bearer ${settings.token}`,
+                    "Content-Type": "application/merge-patch+json",
+                },
+                body: JSON.stringify(patch),
+            });
+
+            if (!response.ok) {
+                rollback();
+                return { success: false, message: `Failed to update status (HTTP ${response.status})` };
+            }
+
+            const currentState = get();
+            safeWriteToStorage(
+                currentState.securityFindings,
+                currentState.oshDependencies,
+                currentState.oshMetadata,
+                currentState.refactoringCandidates,
+                currentState.analysisDate,
+            );
+            return { success: true, message: "Status updated" };
+        } catch (error: any) {
+            rollback();
+            return { success: false, message: error?.message ?? String(error) };
         }
     },
 

@@ -9,8 +9,8 @@ type FileSelectionDialogProps = {
 export const FileSelectionDialog: React.FC<FileSelectionDialogProps> = ({ files, onSelect, onClose }) => {
     return (
         <div className="file-selection-overlay" onClick={onClose}>
-            <div className="file-selection-dialog" onClick={(e) => e.stopPropagation()}>
-                <h3>Select File to Open</h3>
+            <div className="dialog-box" onClick={(e) => e.stopPropagation()}>
+                <h3>📂 Select file to open</h3>
                 <ul className="file-selection-list">
                     {files.map((file, index) => (
                         <li key={index} onClick={() => onSelect(file)}>

@@ -1,30 +1,16 @@
 import React, { useEffect, useState } from "react";
-import type { SecurityFinding } from "../../../store/sigridStore";
+import type { SecurityFinding, FindingStatus } from "../../../store/sigridStore";
+import { SECURITY_STATUSES } from "../../../store/sigridStore";
 import { getStudioProApi } from "@mendix/extensions-api";
 import { getClickableIds } from "../utils/fileNavigation";
-import { formatStatus } from "../utils/pathUtils";
+import { formatStatus, getSecurityRiskSymbol, SEVERITY_SYMBOLS } from "../utils/pathUtils";
+import { FindingEditDialog } from "./FindingEditDialog";
 
 type SecurityTableProps = {
     findings: SecurityFinding[];
     onOpenFiles?: (files: string[]) => void;
     onShowPathInfo?: (files: string[]) => void;
     studioPro: ReturnType<typeof getStudioProApi>;
-};
-
-export const SEVERITY_SYMBOLS: Record<string, string> = {
-    "CRITICAL" : "🟣",
-    "HIGH" : "🔴",
-    "MEDIUM" : "🟠",
-    "LOW" : "🟡",
-    "UNKNOWN" : "⚪️",
-    "" : "⚪️",
-    "NONE" : "🟢",
-    "INFO" : "🔵",
-    "INFORMATION" : "🔵"
-};
-
-export const getRiskSymbol = (severity: string | undefined) => {
-    return SEVERITY_SYMBOLS[severity || ""] ?? "⚪️";
 };
 
 const sortFindings = (findings: SecurityFinding[]) => {
@@ -37,6 +23,7 @@ const sortFindings = (findings: SecurityFinding[]) => {
 
 export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFiles, onShowPathInfo, studioPro }) => {
     const [clickableIds, setClickableIds] = useState<Set<string>>(new Set());
+    const [editingFinding, setEditingFinding] = useState<SecurityFinding | null>(null);
 
     useEffect(() => {
         const checkClickability = async () => {
@@ -66,47 +53,67 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
         }
     };
 
+    const sortedFindings = sortFindings(findings);
+
     return (
+    <>
         <table id="sigridFindings" className="sigrid-table">
             <thead>
                 <tr>
                     <th>Risk</th>
                     <th>Location</th>
+                    <th></th>
                     <th>Description</th>
                     <th>Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
-                {findings.length > 0 ? (
-                    sortFindings(findings).map((finding) => {
+                {sortedFindings.length > 0 ? (
+                    sortedFindings.map((finding) => {
                         const isClickable = clickableIds.has(finding.id);
-                        const tooltip = isClickable 
-                            ? (finding.filePath ?? "") 
-                            : "Click to view full file path";
 
                         return (
-                            <tr 
-                                key={finding.id}
-                                className={isClickable ? "clickable-row" : ""}
-                            >
-                                <td>{getRiskSymbol(finding.severity)}</td>
-                                <td 
-                                    className="clickable-location"
-                                    onClick={() => handleLocationClick(finding)}
-                                    title={tooltip}
-                                >
-                                    {finding.displayFilePath ?? finding.filePath ?? ""}
+                            <tr key={finding.id}>
+                                <td>{getSecurityRiskSymbol(finding.severity)}</td>
+                                <td>{finding.displayFilePath ?? finding.filePath ?? ""}</td>
+                                <td>
+                                    {finding.filePath && (
+                                        <button
+                                            className="icon-button"
+                                            title={isClickable ? "Open in editor" : "View full file path"}
+                                            onClick={() => handleLocationClick(finding)}
+                                        >{isClickable ? "📂" : "📋"}</button>
+                                    )}
                                 </td>
                                 <td>{finding.name}</td>
-                                <td>{formatStatus(finding.status)}</td>
+                                <td className="status-cell">{formatStatus(finding.status)}</td>
+                                <td>
+                                    <button
+                                        className="icon-button"
+                                        title="Edit finding"
+                                        onClick={() => setEditingFinding(finding)}
+                                    >✏️</button>
+                                </td>
                             </tr>
                         );
                     })
                 ) : (
-                    <tr><td colSpan={4}>No security findings found</td></tr>
+                    <tr><td colSpan={6}>No security findings found</td></tr>
                 )}
             </tbody>
         </table>
+        {editingFinding && (
+            <FindingEditDialog
+                findingType="security"
+                findingId={editingFinding.id}
+                currentStatus={editingFinding.status as FindingStatus}
+                currentRemark={editingFinding.remark}
+                statuses={SECURITY_STATUSES}
+                onClose={() => setEditingFinding(null)}
+            />
+        )}
+    </>
     );
 };
 

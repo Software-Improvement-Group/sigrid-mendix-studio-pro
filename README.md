@@ -72,7 +72,8 @@ npm run build:dev    # Build with watch mode
 2. Select **QSM** > **Show QSM findings**.
 3. View Maintainability, Security and Open Source Health findings in the dockable pane:
    - **Scope Selector**: Filter findings between the **Entire system** or the **Selected file** currently open in Studio Pro.
-   - **Navigation**: **Click** any blue finding to automatically open and focus the corresponding document in the Studio Pro editor. Findings shown in standard black text are not navigable, but you can still click them to view the full file path.
+   - **Navigation**: Each finding shows a 📂 or 📋 icon. Click the 📂 icon to open and focus the corresponding document in Studio Pro. Click the 📋 icon to view the full file path for non-navigatable findings.
+   - **Edit Finding Status**: Click the ✏️ icon next to any finding to open the edit dialog. From there you can update the finding's **status** (e.g. Raw, Will Fix, Accepted) and add a **remark**. Changes are saved to Sigrid automatically.
 4. Use the **Reload data** button to refresh findings from Sigrid.
 5. Use the **New scan request** button to trigger an on-demand QSM scan for the system.
 
