@@ -27,7 +27,7 @@ const sortRefactoringCandidates = (refactoringCandidates: RefactoringCandidatesM
     sorted.sort((a, b) => {
         let result: number = severityNames.indexOf(a.severity || "") - severityNames.indexOf(b.severity || "");
         if (result === 0) {
-            result = (a.weight ?? 0) - (b.weight ?? 0);
+            result = (b.weight ?? 0) - (a.weight ?? 0);
         }
         return result;
     });
@@ -37,7 +37,7 @@ const sortRefactoringCandidates = (refactoringCandidates: RefactoringCandidatesM
 
 const formatDescription = (rc: RefactoringCandidate) => {
     const location: string = formatLocation(rc);
-    const unit: string = ["mendix", "mendixflow"].indexOf(rc.technology ?? "") === -1 ? "Flow" : "Unit";
+    const unit: string = ["mendix", "mendixflow"].indexOf(rc.technology ?? "") === -1 ? "Unit" : "Flow";
     const scale: string = ["mendix", "mendixflow"].indexOf(rc.technology ?? "") === -1 ? "lines of code" : "activities";
 
     if (rc.category === "duplication") {
