@@ -121,6 +121,7 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
                 <th>Description</th>
                 <th>Status</th>
                 <th></th>
+                <th></th>
             </tr>
             </thead>
             <tbody>
@@ -136,7 +137,7 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
                                 {getFilePaths(rc).length > 0 && (
                                     <button
                                         className="icon-button"
-                                        title={isClickable ? "Open in editor" : "View full file paths"}
+                                        title={isClickable ? "Open in editor" : "View full file path"}
                                         onClick={() => handleLocationClick(rc)}
                                     >{isClickable ? "📂" : "📋"}</button>
                                 )}
@@ -150,11 +151,12 @@ export const MaintainabilityTable: React.FC<MaintainabilityTableProps> = ({ refa
                                     onClick={() => setEditingCandidate(rc)}
                                 >✏️</button>
                             </td>
+                            <td></td>
                         </tr>
                     );
                 })
             ) : (
-                <tr><td colSpan={6}>No refactoring candidates found</td></tr>
+                <tr><td colSpan={7}>No refactoring candidates found</td></tr>
             )}
             </tbody>
         </table>
