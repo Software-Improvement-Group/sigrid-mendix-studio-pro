@@ -35,6 +35,7 @@ export type SecurityFinding = {
     technology?: string;
     reviewStatus?: string;
     remark?: string;
+    href?: string;
     references: SecurityFindingReference[];
 };
 
@@ -432,6 +433,7 @@ const mapSecurityFinding = (input: unknown): SecurityFinding | null => {
         technology: asString(data.technology),
         reviewStatus: asString(data.reviewStatus),
         remark: asString(data.remark),
+        href: asString(data.href),
         references,
     };
 };

@@ -90,6 +90,14 @@ body {
     text-align: center;
 }
 
+.sigrid-table td:nth-child(6) {
+    padding-right: 2px;
+}
+
+.sigrid-table td:nth-child(7) {
+    padding-left: 2px;
+}
+
 .sigrid-table th {
     background-color: #f4f7fb;
     font-weight: 600;
@@ -308,6 +316,7 @@ body {
     padding: 2px 4px;
     opacity: 0.5;
     transition: opacity 0.15s ease;
+    text-decoration: none;
 }
 
 .icon-button:hover {
