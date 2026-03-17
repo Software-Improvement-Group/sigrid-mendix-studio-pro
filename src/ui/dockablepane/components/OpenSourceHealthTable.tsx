@@ -37,6 +37,7 @@ export const OpenSourceHealthTable: React.FC<OpenSourceHealthTableProps> = ({ de
                 <th>Vulnerabilities</th>
                 <th>Freshness</th>
                 <th>Activity</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -51,10 +52,11 @@ export const OpenSourceHealthTable: React.FC<OpenSourceHealthTableProps> = ({ de
                         <td>{getSecurityRiskSymbol(dependency.licenseRisk)}</td>
                         <td>{getSecurityRiskSymbol(dependency.freshnessRisk)}</td>
                         <td>{getSecurityRiskSymbol(dependency.activityRisk)}</td>
+                        <td></td>
                     </tr>
                 ))
             ) : (
-                <tr><td colSpan={14}>No open source dependencies found</td></tr>
+                <tr><td colSpan={9}>No open source dependencies found</td></tr>
             )}
         </tbody>
     </table>

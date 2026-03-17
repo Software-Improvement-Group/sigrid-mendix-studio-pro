@@ -66,6 +66,7 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
                     <th>Description</th>
                     <th>Status</th>
                     <th></th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -95,11 +96,22 @@ export const SecurityTable: React.FC<SecurityTableProps> = ({ findings, onOpenFi
                                         onClick={() => setEditingFinding(finding)}
                                     >✏️</button>
                                 </td>
+                                <td>
+                                    {finding.href && (
+                                        <a
+                                            className="icon-button"
+                                            href={finding.href}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            title="View finding in Sigrid"
+                                        >🔗</a>
+                                    )}
+                                </td>
                             </tr>
                         );
                     })
                 ) : (
-                    <tr><td colSpan={6}>No security findings found</td></tr>
+                    <tr><td colSpan={7}>No security findings found</td></tr>
                 )}
             </tbody>
         </table>
