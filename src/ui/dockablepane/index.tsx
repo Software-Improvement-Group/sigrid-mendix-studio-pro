@@ -12,6 +12,7 @@ import {FileSelectionDialog} from "./components/FileSelectionDialog";
 import {PathInfoDialog} from "./components/PathInfoDialog";
 import {openFile} from "./utils/fileNavigation";
 import {getPathInfo} from "./utils/pathUtils";
+import {readSettingsFromFile} from "../../store/fileSettingsStorage";
 
 type ScopeOption = "system" | "activeFile";
 
@@ -113,6 +114,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
         isLoading,
         error,
         settings,
+        setSettings,
         loadSettingsFromStorage,
         loadAllData,
         requestNewScan
@@ -197,6 +199,12 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
 
     const securityCount = filteredSecurityFindings.length;
     const openSourceHealthCount = oshDependencies.length;
+
+    useEffect(() => {
+        void readSettingsFromFile(studioPro).then(fileSettings => {
+            if (fileSettings) setSettings(fileSettings);
+        });
+    }, []);
 
     useEffect(() => {
         const syncFromStorage = () => loadSettingsFromStorage();
