@@ -14,6 +14,7 @@ export function SigridSettings({ studioPro }: SigridSettingsProps) {
     const [sigridToken, setSigridToken] = useState("");
     const [sigridCustomer, setSigridCustomer] = useState("");
     const [sigridSystem, setSigridSystem] = useState("");
+    const [sigridUrl, setSigridUrl] = useState("");
     const [statusText, setStatusText] = useState("");
 
     const setSettings = useSigridStore((state) => state.setSettings);
@@ -28,7 +29,8 @@ export function SigridSettings({ studioPro }: SigridSettingsProps) {
         const normalizedSettings = {
             token: sigridToken.trim(),
             customer: sigridCustomer.trim().toLowerCase(),
-            system: sigridSystem.trim().toLowerCase()
+            system: sigridSystem.trim().toLowerCase(),
+            sigridUrl: sigridUrl.trim() || undefined,
         };
 
         setSettings(normalizedSettings);
@@ -40,11 +42,11 @@ export function SigridSettings({ studioPro }: SigridSettingsProps) {
 
             const latestError = useSigridStore.getState().error;
             setStatusText(latestError
-                ? "Settings saved but failed to load data: " + latestError
+                ? "Error: Please confirm you have entered the correct details and try again."
                 : "Settings saved and data loaded successfully!"
             );
         } catch (error: any) {
-            setStatusText("Settings saved but failed to load data: " + (error?.message || "Unknown error"));
+            setStatusText("Error: Please confirm you have entered the correct details and try again.");
         }
     };
 
@@ -54,12 +56,14 @@ export function SigridSettings({ studioPro }: SigridSettingsProps) {
         setSigridToken(fileSettings.token);
         setSigridCustomer(fileSettings.customer);
         setSigridSystem(fileSettings.system);
+        setSigridUrl(fileSettings.sigridUrl ?? "");
         setStatusText("Settings loaded");
     };
 
     const handleTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => setSigridToken(e.target.value);
     const handleCustomerChange = (e: React.ChangeEvent<HTMLInputElement>) => setSigridCustomer(e.target.value);
     const handleSystemChange = (e: React.ChangeEvent<HTMLInputElement>) => setSigridSystem(e.target.value);
+    const handleSigridUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => setSigridUrl(e.target.value);
 
     useEffect(() => {
         ensureGlobalStyles();
@@ -75,8 +79,10 @@ export function SigridSettings({ studioPro }: SigridSettingsProps) {
             onCustomerChange={handleCustomerChange}
             onLoad={loadSettings}
             onSave={saveSettings}
+            onSigridUrlChange={handleSigridUrlChange}
             onSystemChange={handleSystemChange}
             onTokenChange={handleTokenChange}
+            sigridUrl={sigridUrl}
             statusText={statusText}
             system={sigridSystem}
             token={sigridToken}
@@ -89,8 +95,6 @@ export const component: IComponent = {
         const studioPro = getStudioProApi(componentContext);
         createRoot(document.getElementById("root")!).render(
             <StrictMode>
-                <h1>QSM Settings</h1>
-                <p>Required configuration to connect Mendix Studio Pro to QSM</p>
                 <SigridSettings studioPro={studioPro} />
             </StrictMode>
         );

@@ -10,10 +10,14 @@ export async function readSettingsFromFile(studioPro: StudioProApi): Promise<Sig
         const content = await studioPro.app.files.getFile(SETTINGS_FILE);
         const parsed = JSON.parse(content);
         if (parsed.token && parsed.customer && parsed.system) {
+            const sigridUrl = typeof parsed.sigridUrl === "string" && parsed.sigridUrl.trim()
+                ? parsed.sigridUrl.trim()
+                : undefined;
             return {
                 token: parsed.token,
                 customer: parsed.customer,
                 system: parsed.system,
+                sigridUrl,
             };
         }
         return null;
@@ -27,6 +31,7 @@ export async function writeSettingsToFile(studioPro: StudioProApi, settings: Sig
         token: settings.token,
         customer: settings.customer,
         system: settings.system,
+        sigridUrl: settings.sigridUrl ?? "",
     }, null, 2);
     await studioPro.app.files.putFile(SETTINGS_FILE, content);
 }
