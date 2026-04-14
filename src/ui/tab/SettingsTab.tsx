@@ -86,7 +86,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
             <div className="settings-field">
                 <label htmlFor="sigridUrlInput" className="settings-label">
-                    Sigrid URL <span className="settings-label-badge">optional</span>
+                    QSM URL <span className="settings-label-badge">optional</span>
                 </label>
                 <p className="settings-description">The URL of your QSM instance. Only change this if you are using a self-hosted version.</p>
                 <input
