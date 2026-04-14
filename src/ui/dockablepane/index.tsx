@@ -10,6 +10,7 @@ import {PRIMARY_TABS, type PrimaryTabType} from "./tabConfig";
 import {MaintainabilityTable} from "./components/MaintainabilityTable";
 import {FileSelectionDialog} from "./components/FileSelectionDialog";
 import {PathInfoDialog} from "./components/PathInfoDialog";
+import {ScanConfirmDialog} from "./components/ScanConfirmDialog";
 import {openFile} from "./utils/fileNavigation";
 import {getPathInfo} from "./utils/pathUtils";
 import {readSettingsFromFile} from "../../store/fileSettingsStorage";
@@ -121,16 +122,17 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
     } = useSigridStore();
 
     const [scanStatus, setScanStatus] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+    const [showScanConfirm, setShowScanConfirm] = useState(false);
 
     const handleRequestScan = async () => {
+        setShowScanConfirm(false);
         setScanStatus({ message: "Requesting new scan...", type: 'info' });
         const result = await requestNewScan();
-        setScanStatus({ 
-            message: result.message, 
-            type: result.success ? 'success' : 'error' 
+        setScanStatus({
+            message: result.message,
+            type: result.success ? 'success' : 'error'
         });
-        
-        // Clear success message after 5 seconds
+
         if (result.success) {
             setTimeout(() => setScanStatus(null), 5000);
         }
@@ -304,10 +306,17 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
                 </div>
             )}
 
+            {showScanConfirm && (
+                <ScanConfirmDialog
+                    onConfirm={handleRequestScan}
+                    onClose={() => setShowScanConfirm(false)}
+                />
+            )}
+
             <div className="reload-button-row">
                 <button
                     className="reload-button"
-                    onClick={handleRequestScan}
+                    onClick={() => setShowScanConfirm(true)}
                     disabled={isLoading}
                 >
                     New scan request

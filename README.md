@@ -64,7 +64,10 @@ npm run build:dev    # Build with watch mode
    - **Customer**: Your Sigrid customer name
    - **System**: Your Sigrid system name
    - **Token**: Your [Sigrid API token](https://docs.sigrid-says.com/organization-integration/authentication-tokens.html)
+   - **Sigrid URL** *(optional)*: Only set this if you are using a self-hosted Sigrid instance. Leave blank to use the default `https://sigrid-says.com`.
 4. Click **Save settings**
+
+Settings are saved to `qsm-settings.json` in your Mendix project directory and loaded automatically when the extension starts.
 
 ## Usage
 

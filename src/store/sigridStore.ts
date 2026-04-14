@@ -150,6 +150,7 @@ export type SigridSettings = {
     token: string;
     customer: string;
     system: string;
+    sigridUrl?: string;
 };
 
 export type FindingStatus = "RAW" | "REFINED" | "WILL_FIX" | "FIXED" | "ACCEPTED" | "FALSE_POSITIVE";
@@ -274,10 +275,23 @@ const readJsonFromStorage = <T>(
     }
 };
 
+const getSigridOrigin = (sigridUrl?: string): string => {
+    const url = sigridUrl?.trim();
+    if (!url) return "https://sigrid-says.com";
+    try {
+        return new URL(url).origin;
+    } catch {
+        return "https://sigrid-says.com";
+    }
+};
+
+const getApiBase = (sigridUrl?: string): string => sigridUrl?.trim() || SIGRID_API_BASE;
+
 let customerPingSent = false;
 
-const sendCustomerPing = (customerName: string): void => {
+const sendCustomerPing = (customerName: string, sigridUrl?: string): void => {
     if (customerPingSent || !customerName) return;
+    if (sigridUrl?.trim()) return; // Skip analytics ping for custom Sigrid URLs
     customerPingSent = true;
     const url = `https://sigrid-says.com/usage/matomo.php?idsite=5&rec=1&ca=1&e_c=mendixstudiopro&e_a=${encodeURIComponent(customerName)}`;
     fetch(url, { mode: "no-cors" }).catch(() => {});
@@ -285,7 +299,7 @@ const sendCustomerPing = (customerName: string): void => {
 
 const createFetchClient = (settings: SigridSettings) =>
     async <T,>(endpoint: string): Promise<T | null> => {
-        const url = `${SIGRID_API_BASE}/${endpoint}`;
+        const url = `${getApiBase(settings.sigridUrl)}/${endpoint}`;
 
         const response = await fetch(url, {
             mode: "cors",
@@ -727,15 +741,18 @@ export const useSigridStore = create<SigridState>((set, get) => ({
     error: null,
 
     setSettings: (settings: SigridSettings) => {
+        const trimmedUrl = settings.sigridUrl?.trim() || undefined;
         localStorage.setItem("sigridToken", settings.token);
         localStorage.setItem("sigridCustomer", settings.customer.toLowerCase());
         localStorage.setItem("sigridSystem", settings.system.toLowerCase());
-        sendCustomerPing(settings.customer.toLowerCase());
+        localStorage.setItem("sigridUrl", trimmedUrl ?? "");
+        sendCustomerPing(settings.customer.toLowerCase(), trimmedUrl);
         set({
             settings: {
                 token: settings.token,
                 customer: settings.customer.toLowerCase(),
                 system: settings.system.toLowerCase(),
+                sigridUrl: trimmedUrl,
             },
             error: null,
         });
@@ -760,13 +777,16 @@ export const useSigridStore = create<SigridState>((set, get) => ({
             ? storedAnalysisDate
             : derivedAnalysisDate;
 
+        const storedSigridUrl = localStorage.getItem("sigridUrl")?.trim() || undefined;
+
         if (storedToken && storedCustomer && storedSystem) {
-            sendCustomerPing(storedCustomer.toLowerCase());
+            sendCustomerPing(storedCustomer.toLowerCase(), storedSigridUrl);
             set({
                 settings: {
                     token: storedToken,
                     customer: storedCustomer.toLowerCase(),
                     system: storedSystem.toLowerCase(),
+                    sigridUrl: storedSigridUrl,
                 },
                 securityFindings: cachedSecurityFindings,
                 oshDependencies: cachedOshDependencies,
@@ -793,7 +813,8 @@ export const useSigridStore = create<SigridState>((set, get) => ({
         }
 
         try {
-            const url = `https://sigrid-says.com/rest/inboundresults/qsm/${settings.customer}/${settings.system}`;
+            const origin = getSigridOrigin(settings.sigridUrl);
+            const url = `${origin}/rest/inboundresults/qsm/${settings.customer}/${settings.system}`;
             const response = await fetch(url, {
                 method: "POST",
                 mode: "cors",
@@ -854,7 +875,7 @@ export const useSigridStore = create<SigridState>((set, get) => ({
             set({ refactoringCandidates: updated });
         }
         try {
-            const url = `${SIGRID_API_BASE}/findings/${settings.customer}/${settings.system}/${findingId}`;
+            const url = `${getApiBase(settings.sigridUrl)}/findings/${settings.customer}/${settings.system}/${findingId}`;
             const response = await fetch(url, {
                 method: "PATCH",
                 mode: "cors",
