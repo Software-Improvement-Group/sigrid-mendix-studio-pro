@@ -5,9 +5,9 @@ directly into your development environment.
 
 ## Prerequisites
 
-- Mendix Studio Pro 11.7.0 or higher
+- Mendix Studio Pro 11.7.0 or higher (theoretically, it may also work with version 11.4.0, but this hasn’t been tested yet)
 - Node.js 22.x or higher
-- You have a Sigrid account
+- You have a Sigrid/QSM account
 - You have a [Sigrid API token](https://docs.sigrid-says.com/organization-integration/authentication-tokens.html)
 
 ## Installation
@@ -61,10 +61,10 @@ npm run build:dev    # Build with watch mode
 1. Locate the **Extensions** menu in Studio Pro's main menu bar.
 2. Select **QSM** > **QSM Settings**.
 3. Enter your Sigrid/QSM credentials:
-   - **Customer**: Your Sigrid customer name
-   - **System**: Your Sigrid system name
+   - **Customer**: Your Sigrid/QSM customer name
+   - **System**: Your Sigrid/QSM system name
    - **Token**: Your [Sigrid API token](https://docs.sigrid-says.com/organization-integration/authentication-tokens.html)
-   - **Sigrid URL** *(optional)*: Only set this if you are using a self-hosted Sigrid instance. Leave blank to use the default `https://sigrid-says.com`.
+   - **Sigrid/QSM URL** *(optional)*: Only set this if you are using a self-hosted Sigrid/QSM instance. Leave blank to use the default `https://sigrid-says.com`.
 4. Click **Save settings**
 
 Settings are saved to `qsm-settings.json` in your Mendix project directory and loaded automatically when the extension starts.
@@ -79,7 +79,7 @@ Settings are saved to `qsm-settings.json` in your Mendix project directory and l
    - **Edit Finding Status**: Click the ✏️ icon next to any finding to open the edit dialog. From there you can update the finding's **status** (e.g. Raw, Will Fix, Accepted) and add a **remark**. Changes are saved to Sigrid automatically.
    - **Open Finding in Sigrid**: For Security findings, click the 🔗 icon next to any finding to open the selected finding in Sigrid.
 4. Use the **Reload data** button to refresh findings from Sigrid.
-5. Use the **New scan request** button to trigger an on-demand QSM scan for the system.
+5. Use the **New scan request** button to trigger an on-demand QSM scan for the system. This feature only works for systems residing on the Mendix Team Server.
 
 ## License
 
