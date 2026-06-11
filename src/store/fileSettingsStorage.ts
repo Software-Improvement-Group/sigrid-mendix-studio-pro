@@ -13,11 +13,15 @@ export async function readSettingsFromFile(studioPro: StudioProApi): Promise<Omi
             const sigridUrl = typeof parsed.sigridUrl === "string" && parsed.sigridUrl.trim()
                 ? parsed.sigridUrl.trim()
                 : undefined;
-            return {
+            const settings = {
                 customer: parsed.customer,
                 system: parsed.system,
                 sigridUrl,
             };
+            if (typeof parsed.token === "string" && parsed.token.trim()) {
+                await migrateLegacyToken(studioPro, parsed.token.trim(), settings);
+            }
+            return settings;
         }
         return null;
     } catch {
@@ -25,7 +29,21 @@ export async function readSettingsFromFile(studioPro: StudioProApi): Promise<Omi
     }
 }
 
-export async function writeSettingsToFile(studioPro: StudioProApi, settings: SigridSettings): Promise<void> {
+async function migrateLegacyToken(
+    studioPro: StudioProApi,
+    legacyToken: string,
+    settings: Omit<SigridSettings, "token">,
+): Promise<void> {
+    try {
+        if (!localStorage.getItem("sigridToken")) {
+            localStorage.setItem("sigridToken", legacyToken);
+        }
+        await writeSettingsToFile(studioPro, settings);
+    } catch {
+    }
+}
+
+export async function writeSettingsToFile(studioPro: StudioProApi, settings: Omit<SigridSettings, "token">): Promise<void> {
     const content = JSON.stringify({
         customer: settings.customer,
         system: settings.system,

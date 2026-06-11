@@ -123,6 +123,7 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
 
     const [scanStatus, setScanStatus] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
     const [showScanConfirm, setShowScanConfirm] = useState(false);
+    const [tokenMissing, setTokenMissing] = useState(false);
 
     const handleRequestScan = async () => {
         setShowScanConfirm(false);
@@ -208,6 +209,8 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
             const storedToken = localStorage.getItem("sigridToken");
             if (storedToken) {
                 setSettings({ ...fileSettings, token: storedToken });
+            } else {
+                setTokenMissing(true);
             }
         });
     }, []);
@@ -274,6 +277,11 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
             )}
             {scopeEnabled && scope === "activeFile" && !activeFile?.documentName && (
                 <div className="status-message warning">Open a file in Studio Pro to filter findings.</div>
+            )}
+            {tokenMissing && !settings && (
+                <div className="status-message warning">
+                    No API token configured. Open QSM Settings from the QSM menu to enter your token.
+                </div>
             )}
             {isLoading && <div className="status-message">Loading data...</div>}
             {error && <div className="status-message error">{error}</div>}
