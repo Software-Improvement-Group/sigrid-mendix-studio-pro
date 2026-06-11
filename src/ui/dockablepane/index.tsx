@@ -204,7 +204,11 @@ export function SigridFindings({ studioPro }: SigridFindingsProps) {
 
     useEffect(() => {
         void readSettingsFromFile(studioPro).then(fileSettings => {
-            if (fileSettings) setSettings(fileSettings);
+            if (!fileSettings) return;
+            const storedToken = localStorage.getItem("sigridToken");
+            if (storedToken) {
+                setSettings({ ...fileSettings, token: storedToken });
+            }
         });
     }, []);
 

@@ -53,7 +53,8 @@ export function SigridSettings({ studioPro }: SigridSettingsProps) {
     const loadSettings = async() => {
         const fileSettings = await readSettingsFromFile(studioPro);
         if (!fileSettings) { setStatusText("No settings found"); return; }
-        setSigridToken(fileSettings.token);
+        const storedToken = localStorage.getItem("sigridToken");
+        if (storedToken) setSigridToken(storedToken);
         setSigridCustomer(fileSettings.customer);
         setSigridSystem(fileSettings.system);
         setSigridUrl(fileSettings.sigridUrl ?? "");
