@@ -111,6 +111,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             <div className={statusClassName}>
                 {statusText}
             </div>
+
+            <div className="warning">
+                Make sure you add the file <code>qsm-settings.json</code> to your <code>.gitignore</code> file.<br />
+                This prevents you from accidentally commiting the file to your repository.
+            </div>
         </div>
         </div>
     );

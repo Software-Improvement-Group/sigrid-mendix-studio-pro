@@ -628,3 +628,16 @@ body {
     display: flex;
     justify-content: flex-end;
 }
+
+.warning {
+    margin-top: 30px;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: #D44E31;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.warning code {
+    color: #F8C716;
+}
